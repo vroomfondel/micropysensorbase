@@ -14,6 +14,8 @@ import config
 import _thread
 
 
+DISABLED_AUTO_SETUP: bool = False
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
@@ -23,6 +25,9 @@ DISABLE_INET: bool = False
 
 if "disable_inet" in config.data and config.data["disable_inet"]:
     DISABLE_INET = True
+
+if "disable_autosetup" in config.data and config.data["disable_autosetup"]:
+    DISABLED_AUTO_SETUP = True
 
 if not DISABLE_INET:
     wifi.ensure_wifi_catch_reset()
@@ -201,7 +206,7 @@ def setup_pins():
             logger.debug("smbus_sclpin already created")
 
         if not smbus:
-            smbus = machine.SoftI2C(scl=smbus_sclpin, sda=smbus_sdapin)
+            smbus = SMBus(0, scl=smbus_sclpin, sda=smbus_sdapin, freq=400_000)
             logger.debug(f"{smbus=}")
 
             k: list = smbus.scan()
@@ -212,7 +217,7 @@ def setup_pins():
 
         if config.data["ina226"]["enabled"] and not ina:
             ina = INA226(
-                smbus=bus, max_expected_amps=config.data["ina226"]["max_expected_amps"], log_level=logging.INFO, shunt_ohms=config.data["ina226"]["shunt_ohms"]
+                smbus=smbus, max_expected_amps=config.data["ina226"]["max_expected_amps"], log_level=logging.INFO, shunt_ohms=config.data["ina226"]["shunt_ohms"]
             )
             ina.configure(avg_mode=ina.AVG_16BIT)  # make avg-mode configurable ?!
 
@@ -292,7 +297,7 @@ def setup_pins():
         digital_input_pin.irq(trigger=machine.Pin.IRQ_FALLING | machine.Pin.IRQ_RISING,
                               handler=handle_pin_interrupt_falling_rising)
 
-    if False and config.data["wakeup_deepsleep_pin"]["enabled"]:
+    if config.data["wakeup_deepsleep_pin"]["enabled"] and not config.data["rotary"]["enabled"]:
         import esp32
 
         wakeup_deepsleep_pin = machine.Pin(config.data["wakeup_deepsleep_pin"]["input_pin"])
@@ -366,7 +371,6 @@ class INAREADDATA:
         r["power"] = self.power
 
         return r
-
 
 
 
@@ -595,6 +599,8 @@ def main():
 
 
 if __name__ == "__main__":
-    setup()  # also calls setup_pins
-
-    main()
+    if DISABLED_AUTO_SETUP:
+        logger.debug("DISABLED AUTO SETUP")
+    else:
+        setup()  # also calls setup_pins
+        main()
