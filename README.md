@@ -85,7 +85,7 @@ Inspiration, code snippets, etc.
 
 ## some pictures of it
 * [<img src="media/53604859770_0842156e31_o_noexif.jpg" width="650"/>](media/53604859770_0842156e31_o_noexif.jpg)
-* [<img src="media/Bildschirmfoto_influxdb.png" width="650"/>](media/Bildschirmfoto_influxdb.png.png)
+* [<img src="media/Bildschirmfoto_influxdb.png" width="650"/>](media/Bildschirmfoto_influxdb.png)
 * [<img src="media/Bildschirmfoto_mqtt_explorer.png" width="650"/>](media/Bildschirmfoto_mqtt_explorer.png)
 * [<img src="media/Bildschirmfoto_nodered.png" width="650"/>](media/Bildschirmfoto_nodered.png)
 * [<img src="media/Bildschirmfoto_uptimekuma.png" width="650"/>](media/Bildschirmfoto_uptimekuma.png)
