@@ -48,6 +48,8 @@ class SMBus():  # machine.I2C):
 
         #(0, scl=machine.Pin(22), sda = machine.Pin(21), freq = 400_000)
 
+    def scan(self):
+        return self.i2c.scan()
 
     def read_byte_data(self, addr, register):
         """ Read a single byte from register of device at addr
