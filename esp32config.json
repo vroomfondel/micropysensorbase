@@ -1,0 +1,206 @@
+{
+    "webrepl": {
+        "password": "<SOMEPASSWORDSECRET>"
+    },
+    "hostnameprefix": "micropyhydro_",
+
+    "wifi2": {
+        "SSID": "<SOMESSID2>",
+        "password": "<SOMEPASSWORDSECRET2>",
+        "retries": 10
+    },
+    "wifi3": {
+        "SSID": "<SOMESSID3>",
+        "password": "<SOMEPASSWORDSECRET3>",
+        "retries": 0
+    },
+    "wifi1": {
+        "SSID": "<SOMESSID1>",
+        "password": "<SOMEPASSWORDSECRET1>",
+        "retries": 10
+    },
+    "mosquitto": {
+        "MOSQUITTO_USERNAME": "<SOMEUSERNAME>",
+        "MOSQUITTO_PASSWORD": "<SOMEPASSWORD>",
+        "MOSQUITTO_HOST": "<SOMEHOST>>",
+        "MOSQUITTO_PORT": 1883,
+
+        "lwtfeed": "esp32/{clientid}/LWT",
+        "statusfeed": "esp32/{clientid}/status",
+        "controlfeed": "esp32/{clientid}/control",
+
+        "loggingfeed": "esp32/{clientid}/logging",
+
+        "lat_loc1": 12.345167,
+        "lon_loc1": 9.876543,
+        "ele_loc1": 6.789,
+
+        "lat_loc2": 12.345168,
+        "lon_loc2": 9.876544,
+        "ele_loc2": 6.789
+    },
+    "i2c": {
+        "enabled": false,
+        "sda_pin": 21,
+        "scl_pin": 22
+    },
+    "smbus": {
+        "enabled": false,
+        "sda": 21,
+        "scl": 22
+    },
+    "ina226": {
+        "enabled":false,
+        "shunt_ohms": 0.1,
+        "max_expected_amps": 0.5
+    },
+    "adc": {
+        "enabled": false,
+        "input_pin": 35
+    },
+    "rotary": {
+        "enabled": false,
+        "clk_pin": 25,
+        "dt_pin": 26,
+        "sw_pin": 27
+    },
+    "digital_output": {
+        "enabled":false,
+        "output_pin": 27
+    },
+    "digital_input": {
+        "enabled":false,
+        "input_pin": 26
+    },
+    "wakeup_deepsleep_pin": {
+        "enabled": false,
+        "input_pin": 26
+    },
+    "pwm": {
+        "enabled":false,
+        "output_pin": 19
+    },
+    "uart": {
+        "enabled":false,
+        "rx_pin": 16,
+        "tx_pin": 17
+    },
+    "ssd1306": {
+        "enabled": false,
+        "address": 60,
+        "width": 128,
+        "height": 64
+    },
+    "sh1106": {
+        "enabled": false,
+        "address": 60,
+        "width": 128,
+        "height": 64,
+        "flip_en": false
+    },
+    "get_time_per_uart": false,
+    "get_time_per_espnow": {
+        "enabled": false
+    },
+
+    "espnow": {
+        "channel": 7,
+        "pmk": "<SOMEPASSWORDSECRET16CHARS>",
+        "peers": {
+            "somehostnameespnow1_sta": {
+                "mac": "aabbccddeeff11",
+                "lmk": "<1_SOMEOTHERPASSWORDSECRET16CHARS>"
+            },
+            "somehostnameespnow1_ap": {
+                "mac": "aabbccddeeff22",
+                "lmk": "<2_SOMEOTHERPASSWORDSECRET16CHARS>"
+            },
+            "somehostnameespnow2_sta": {
+                "mac": "aabbccddeeff33",
+                "lmk": "<3_SOMEOTHERPASSWORDSECRET16CHARS>"
+            }
+        }
+    },
+
+    "forcerestart_after_running_seconds": 86400,
+
+    "aabbccddeeff55": {
+        "hostname": "somehostname"
+    },
+    "aabbccddeeff66": {
+        "hostname": "someotherhostname"
+    },
+    "aabbccddeeff33": {
+        "disable_inet": true,
+        "hostname": "somehostnameespnow2",
+
+        "wakeup_deepsleep_pin": {
+            "enabled": true
+        },
+        "i2c": {
+            "enabled": true
+        },
+        "ssd1306": {
+            "enabled": true
+        },
+
+        "espnow": {
+            "peers": {
+                "somehostnameespnow1_ap": {
+                    "lmk": "<2_SOMEOTHERPASSWORDSECRET16CHARS>"
+                }
+            }
+        }
+    },
+    "aabbccddeeff11": {
+        "disable_inet": true,
+        "hostname": "somehostnameespnow1",
+
+        "i2c": {
+            "enabled": true
+        },
+        "pwm": {
+            "enabled":true
+        },
+        "uart": {
+            "enabled":true
+        },
+        "ssd1306": {
+            "enabled": true
+        },
+
+        "get_time_per_uart": true,
+
+        "espnow": {
+            "peers": {
+                "somehostnameespnow2_sta": {
+                    "lmk": "<2_SOMEOTHERPASSWORDSECRET16CHARS>"
+                }
+            }
+        }
+    },
+    "aabbccddeeff88": {
+        "hostname": "someotherhostname3",
+        "uart": {
+            "enabled":true
+        }
+    },
+    "aabbccddeeff99": {
+        "hostname": "someotherhostname4",
+        "wifi3": {
+            "SSID": "<SOMESSID1>",
+            "password": "<SOMEPASSWORD1>",
+            "retries": 10
+        },
+        "wifi1": {
+            "SSID": "<SOMESSID2>",
+            "password": "<SOMEPASSWORD2>",
+            "retries": 10
+        },
+        "wifi2": {
+            "SSID": "<SOMESSID1>",
+            "password": "<SOMEPASSWORD1>",
+            "retries": 10
+        }
+    }
+}
