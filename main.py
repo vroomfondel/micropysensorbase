@@ -147,10 +147,12 @@ uart2: machine.UART | None = None
 pin_low: bool = False
 
 
-MEASURE_TELE_PERIOD: int = 300
+# MEASURE_TELE_PERIOD: int = 300
+MEASURE_TELE_PERIOD: int = 60
+CKMSGS_PERIOD_MS: int = 3_000
+MEASURETIMER_PERIOD_MS: int = 10_000
 
 last_measure_sent_gmt: float | None = None
-
 
 def handle_pin_interrupt_falling_rising(arg_pin: machine.Pin):
     global pin_low
@@ -560,21 +562,21 @@ def ina226_measure_callback(trigger):
 
 
 def setup():
-    global msgtimer, measuretimer
+    global msgtimer, measuretimer, MEASURETIMER_PERIOD_MS, CKMSGS_PERIOD_MS
 
     logger.debug("main::setup()")
 
     check_msgs()
     msgtimer.init(
-        period=3_000, mode=machine.Timer.PERIODIC, callback=check_msgs_callback
+        period=CKMSGS_PERIOD_MS, mode=machine.Timer.PERIODIC, callback=check_msgs_callback
     )
 
     setup_pins()
 
-    # measurement will be executed each 60s; MEASURE_TELE_PERIOD will be checked if "overdue";
+    # measurement will be executed each MEASURETIMER_PERIOD_MS; MEASURE_TELE_PERIOD will be checked if "overdue";
     # also if threshold since last sent measurement is exceeeded
     measuretimer.init(
-        period=60_000, mode=machine.Timer.PERIODIC, callback=ina226_measure_callback
+        period=MEASURETIMER_PERIOD_MS, mode=machine.Timer.PERIODIC, callback=ina226_measure_callback
     )
 
     if config.data["forcerestart_after_running_seconds"] > 0:
