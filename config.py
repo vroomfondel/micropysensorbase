@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 DISABLE_INET: bool = False
+ENABLE_WATCHDOG: bool = True
 
 # may either be both False or exactly one may be True
 UPDATE_CONFIG_WITH_LOCAL_CONFIG_IF_EXISTS: bool = False
@@ -114,6 +115,9 @@ else:
 
 if "disable_inet" in data and data["disable_inet"]:
     DISABLE_INET = True
+
+if "enable_watchdog" in data and not data["enable_watchdog"]:
+    ENABLE_WATCHDOG = False
 
 
 # TODO: check for stored config-variables on chip ?!

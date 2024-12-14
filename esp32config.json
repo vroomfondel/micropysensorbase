@@ -1,5 +1,6 @@
 {
     "disable_autosetup": false,
+    "enable_watchdog": true,
     "webrepl": {
         "password": "<SOMEPASSWORDSECRET>"
     },

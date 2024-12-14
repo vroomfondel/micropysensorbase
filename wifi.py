@@ -79,11 +79,14 @@ def get_wifi_config() -> dict:
 
     return ret
 
-def ensure_wifi() -> tuple|None:
+def ensure_wifi(watchdog: machine.WDT|None = None) -> tuple|None:
     # global data
     global wlan, wlan_scanlist
 
     ret: tuple | None = None if not wlan.isconnected else wlan.ifconfig()
+
+    if watchdog:
+        watchdog.feed()
 
     while not wlan.isconnected():
         for w in wlan_scanlist:
@@ -129,6 +132,9 @@ def ensure_wifi() -> tuple|None:
 
             wlan.connect(apssid, config.data[w]["password"], bssid=_bssid)
             for _ in range(config.data[w]["retries"]):
+                if watchdog:
+                    watchdog.feed()
+
                 if wlan.isconnected():
                     ret = wlan.ifconfig()
                     logger.info(f'network config: wlan.ifconfig()={ret}')  # (ip, subnet, gateway, dns)
@@ -152,9 +158,9 @@ def ensure_wifi() -> tuple|None:
 
     return ret
 
-def ensure_wifi_catch_reset(reset_if_wifi_fails: bool = True) -> tuple:
+def ensure_wifi_catch_reset(reset_if_wifi_fails: bool = True, watchdog: machine.WDT|None = None) -> tuple:
     try:
-        return ensure_wifi()
+        return ensure_wifi(watchdog=watchdog)
     except Exception as ex:
         _timestring = time.getisotimenow()
 
@@ -166,6 +172,8 @@ def ensure_wifi_catch_reset(reset_if_wifi_fails: bool = True) -> tuple:
 
         if reset_if_wifi_fails:
             logger.info("RESETTING... in 30s")
+            if watchdog:
+                logger.info("\tor earlier if watchdog kicks in...")
             time.sleep(30)
             machine.reset()
 

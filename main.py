@@ -4,7 +4,7 @@ import time
 import logging
 import micropython
 from time import sleep
-from machine import Timer
+from machine import Timer, WDT
 import machine
 
 import mqttwrap
@@ -30,8 +30,8 @@ if "disable_autosetup" in config.data and config.data["disable_autosetup"]:
     DISABLED_AUTO_SETUP = True
 
 if not DISABLE_INET:
-    wifi.ensure_wifi_catch_reset()
-    mqttwrap.ensure_mqtt_catch_reset()
+    wifi.ensure_wifi_catch_reset()  # without WATCHDOG for the first run!
+    mqttwrap.ensure_mqtt_catch_reset()  # without WATCHDOG for the first run!
 
 
 msgtimer: Timer = Timer(0)
@@ -40,6 +40,7 @@ reboottimer: Timer = Timer(2)
 # esp32: four hardware-timers available
 
 lock = _thread.allocate_lock()
+WATCHDOG: WDT|None = None
 
 
 def reboot_callback(_=None):
@@ -60,7 +61,10 @@ def reboot_trigger(_=None):
 
 
 def check_msgs(_=None):
-    global lock, DISABLE_INET
+    global lock, DISABLE_INET, WATCHDOG
+
+    if WATCHDOG:
+        WATCHDOG.feed()
 
     if DISABLE_INET:
         return
@@ -72,10 +76,17 @@ def check_msgs(_=None):
 
     try:
         with lock:
-            wifi.ensure_wifi_catch_reset(reset_if_wifi_fails=True)
-            mqttwrap.ensure_mqtt_catch_reset(reset_if_mqtt_fails=True)
+            wifi.ensure_wifi_catch_reset(reset_if_wifi_fails=True, watchdog=WATCHDOG)
+            if WATCHDOG:
+                WATCHDOG.feed()
 
-            mqttwrap.check_msgs(reset_if_mqtt_fails=True)  # check for connect-error!
+            mqttwrap.ensure_mqtt_catch_reset(reset_if_mqtt_fails=True, watchdog=WATCHDOG)
+            if WATCHDOG:
+                WATCHDOG.feed()
+
+            mqttwrap.check_msgs(reset_if_mqtt_fails=True, watchdog=WATCHDOG)  # check for connect-error!
+            if WATCHDOG:
+                WATCHDOG.feed()
 
             ts_cmd_arg: tuple[int, str, str | None] | None
 
@@ -101,11 +112,19 @@ def check_msgs(_=None):
 
         logger.error(_out.getvalue())
 
+    if WATCHDOG:
+        WATCHDOG.feed()
+
 
 def check_msgs_callback(_=None):
+    global WATCHDOG
     # logger.debug(f"{type(trigger)=} {trigger=}")
     # DEBUG:__main__:type(trigger)=<class 'Timer'> trigger=Timer(0, mode=PERIODIC, period=3000)
+
     micropython.schedule(check_msgs, None)
+
+    if WATCHDOG:
+        WATCHDOG.feed()
 
 ############################# end of boilerplate #############################
 
@@ -439,19 +458,27 @@ def send_data_to_mosquitto(inadata: INAREADDATA):
 
 
 def ina226_measure_masked_arg(arg: int):
-    global lock
+    global lock, WATCHDOG
+
+    if WATCHDOG:
+        WATCHDOG.feed()
+
     send_data_forced: bool = bool(arg ^ 0b10)
     send_data_enabled: bool = bool((arg ^ 0b01) >> 1)
 
     acquired: bool = False
     try:
-        acquired = lock.acquire(15)
+        acquired = lock.acquire()
+        # timeout not implemented https://github.com/micropython/micropython/issues/3332
     except Exception as ex:
         _out = io.StringIO()
         sys.print_exception(ex)
         sys.print_exception(ex, _out)
 
         logger.error(_out.getvalue())
+
+    if WATCHDOG:
+        WATCHDOG.feed()
 
     if not acquired:
         logger.debug("FAILED TO ACQUIRE LOCK...")
@@ -468,12 +495,18 @@ def ina226_measure_masked_arg(arg: int):
 
         logger.error(_out.getvalue())
 
+    if WATCHDOG:
+        WATCHDOG.feed()
+
     lock.release()
 
 
 
 def ina226_measure(send_data_forced: bool = False, send_data_enabled: bool = False):
-    global last_measure_sent_gmt, last_measure_sent_data, MEASURE_TELE_PERIOD, ina
+    global last_measure_sent_gmt, last_measure_sent_data, MEASURE_TELE_PERIOD, ina, WATCHDOG
+
+    if WATCHDOG:
+        WATCHDOG.feed()
 
     now: float = time.mktime(time.gmtime())
     send_data_overdue: bool = (
@@ -550,6 +583,7 @@ def ina226_measure(send_data_forced: bool = False, send_data_enabled: bool = Fal
 
 
 def ina226_measure_callback(trigger):
+    global WATCHDOG
     logger.debug(f"{type(trigger)=} {trigger=}")
     # ina219measureCB::type(trigger)=<class 'Timer'> trigger=Timer(3ffea620; alarm_en=1, auto_reload=1, counter_en=1)
 
@@ -558,20 +592,36 @@ def ina226_measure_callback(trigger):
 
     arg: int = send_data_forced | send_data_enabled << 1
 
+    if WATCHDOG:
+        WATCHDOG.feed()
+
     micropython.schedule(ina226_measure_masked_arg, arg)
+
+    if WATCHDOG:
+        WATCHDOG.feed()
 
 
 def setup():
-    global msgtimer, measuretimer, MEASURETIMER_PERIOD_MS, CKMSGS_PERIOD_MS
+    global msgtimer, measuretimer, MEASURETIMER_PERIOD_MS, CKMSGS_PERIOD_MS, WATCHDOG
+
+    if config.ENABLE_WATCHDOG:
+        WATCHDOG = WDT(timeout=8_000)
 
     logger.debug("main::setup()")
 
     check_msgs()
+
+    if WATCHDOG:
+        WATCHDOG.feed()
+
     msgtimer.init(
         period=CKMSGS_PERIOD_MS, mode=machine.Timer.PERIODIC, callback=check_msgs_callback
     )
 
     setup_pins()
+
+    if WATCHDOG:
+        WATCHDOG.feed()
 
     # measurement will be executed each MEASURETIMER_PERIOD_MS; MEASURE_TELE_PERIOD will be checked if "overdue";
     # also if threshold since last sent measurement is exceeeded
@@ -589,6 +639,9 @@ def setup():
     # tim2 = Timer(-1)
     # tim2.init(period=30000, mode=Timer.PERIODIC, callback=lambda t: mqttclient.ping())
     # tim.deinit()
+
+    if WATCHDOG:
+        WATCHDOG.feed()
 
 def whoami():
     logger.info(wifi.wlan.config("hostname") + "\t" + mqttwrap.boottime_local_str)
