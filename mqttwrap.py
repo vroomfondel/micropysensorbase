@@ -329,7 +329,7 @@ def ping_if_needed(threshhold: int = 10, reset_if_mqtt_fails: bool = True, watch
 
 
 
-def send_status_to_mosquitto(include_wifi_scan: bool = True, watchdog: machine.WDT|None = None):
+def send_status_to_mosquitto(include_wifi_scan: bool = True, watchdog: machine.WDT|None = None, also_send_LWT: bool = True):
     global boottime_local_str, boottime_gmt, last_status_gmt
 
     ifconfig: tuple = wifi.ensure_wifi_catch_reset(reset_if_wifi_fails=True, watchdog=watchdog)
@@ -375,6 +375,16 @@ def send_status_to_mosquitto(include_wifi_scan: bool = True, watchdog: machine.W
     )
     # mqttwrap.loop()
     last_status_gmt = time.mktime(time.gmtime())
+
+    if also_send_LWT:
+        publish_one(
+            topic=get_feed("lwtfeed"),
+            msg="ONLINE",
+            qos=1,
+            retain=True,
+            reset_if_mqtt_fails=True,
+            watchdog=watchdog
+        )
 
 
 def check_msgs(reset_if_mqtt_fails: bool = True, watchdog: machine.WDT|None = None):
