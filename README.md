@@ -21,7 +21,7 @@ of the drainage pumps and their triggering.
   * wiring / breadboard / soldering iron
   * waterproof box (used this one in the end: https://www.amazon.de/gp/product/B0751QPFKM)
 
-#### KiCAD :: PCB :: hydrostatic water-level monitoring :: hardware / environment
+#### **(Update 2025-11-09)** KiCAD :: PCB :: hydrostatic water-level monitoring :: hardware / environment
   * KiCAD project files for PCB creation (used https://aisler.net/ for this): [kicad_ina226_xl6019_esp32_EXPORT.zip](PCB/kicad_ina226_xl6019_esp32_EXPORT.zip)
   * [<img src="media/3d_pcb_render.jpg" width="650"/>](media/3d_pcb_render.jpg)
   * [<img src="media/ina226_xl6019_esp32_pcb.png" width="650">](media/ina226_xl6019_esp32_pcb.png)
