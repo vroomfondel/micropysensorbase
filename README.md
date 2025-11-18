@@ -28,6 +28,9 @@ of the drainage pumps and their triggering.
   * [<img src="media/ina226_xl6019_esp32_schematic.png" width="650">](media/ina226_xl6019_esp32_schematic.pdf)
   * Received Board:<br/>
     [<img src="media/PXL_20251117_095251478_CUT.png" width="650">](...)
+  * Soldered+Assembled (broke one unused socket from the pin header):<br/>
+    [<img src="media/PXL_20251118_094316034.png" width="650">](...)
+    [<img src="media/PXL_20251118_094311591.png" width="650">](...)
 
 #### software / environment
   * wifi
