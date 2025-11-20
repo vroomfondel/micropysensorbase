@@ -616,7 +616,7 @@ def setup():
     global msgtimer, measuretimer, MEASURETIMER_PERIOD_MS, CKMSGS_PERIOD_MS, WATCHDOG
 
     if config.ENABLE_WATCHDOG:
-        WATCHDOG = WDT(timeout=8_000)
+        WATCHDOG = WDT(timeout=30_000)
 
     logger.debug("main::setup()")
 

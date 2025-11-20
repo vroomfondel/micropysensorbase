@@ -171,10 +171,10 @@ def ensure_wifi_catch_reset(reset_if_wifi_fails: bool = True, watchdog: machine.
         logger.error(_out.getvalue())
 
         if reset_if_wifi_fails:
-            logger.info("RESETTING... in 30s")
+            logger.info("RESETTING... in 60s")
             if watchdog:
                 logger.info("\tor earlier if watchdog kicks in...")
-            time.sleep(30)
+            time.sleep(60)
             machine.reset()
 
 def start_web_repl():

@@ -215,10 +215,10 @@ def ensure_mqtt_catch_reset(reset_if_mqtt_fails: bool = True, watchdog: machine.
         logger.error(_out.getvalue())
 
         if reset_if_mqtt_fails:
-            logger.debug("RESETTING...in 30s")
+            logger.debug("RESETTING...in 60s")
             if watchdog:
                 logger.debug("\tor if watchdog kicks in")
-            time.sleep(30)
+            time.sleep(60)
             machine.reset()
 
 

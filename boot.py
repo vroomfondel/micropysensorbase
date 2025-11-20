@@ -48,28 +48,46 @@ if "boot_ssd" in config.data and config.data["boot_ssd"]:
         time.sleep(2)
 
 
+import sys
+import io
 
 if "disable_inet" not in config.data or not config.data["disable_inet"]:
     import wifi
     wifi.ensure_wifi()
     wifi.start_web_repl()
 
-    import ntptime
-    for i in range(10):
-        try:
-            ntptime.settime()
-            time.set_had_proper_time_set(True)
-            break
-        except Exception as ex:
-            import sys
-            import io
 
-            _out = io.StringIO()
-            sys.print_exception(ex)
-            sys.print_exception(ex, _out)
+    try:
+        import ntptime
 
-            logger.error(_out.getvalue())
-            time.sleep(2)
+        gwntp = wifi.wlan.ipconfig("gw4")
+        poolntp = "pool.ntp.org"
+        ntptime.timeout = 2
+
+        for i in range(10):
+            for h in  [gwntp, poolntp]:
+                try:
+                    ntptime.host = h
+                    ntptime.settime()
+                    time.set_had_proper_time_set(True)
+                    logger.info(f"ntptime set by host {h}")
+                    break
+                except Exception as ex:
+                    _out = io.StringIO()
+                    sys.print_exception(ex)
+                    sys.print_exception(ex, _out)
+
+                    logger.error(_out.getvalue())
+                    time.sleep(2)
+
+            if time.get_had_proper_time_set():
+                break
+    except Exception as imex:
+        _out = io.StringIO()
+        sys.print_exception(ex)
+        sys.print_exception(ex, _out)
+
+        logger.error(_out.getvalue())
 else:
     logger.info("INET DISABLED... NO NTPTIME ETC...")
 
