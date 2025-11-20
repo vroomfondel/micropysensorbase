@@ -244,7 +244,8 @@ def setup_pins():
             ina = INA226(
                 address=ina_address, smbus=smbus, max_expected_amps=config.data["ina226"]["max_expected_amps"], log_level=logging.INFO, shunt_ohms=config.data["ina226"]["shunt_ohms"]
             )
-            ina.configure(avg_mode=ina.AVG_16BIT)  # make avg-mode configurable ?!
+            ina.configure(avg_mode=ina.AVG_4BIT, bus_ct=ina.VCT_204us_BIT, shunt_ct=ina.VCT_8244us_BIT)  # make avg-mode configurable ?!
+            # ina.configure(avg_mode=ina.AVG_1024BIT, bus_ct=ina.VCT_204us_BIT, shunt_ct=ina.VCT_8244us_BIT)  # make avg-mode configurable ?!
 
 
     if config.data["i2c"]["enabled"]:

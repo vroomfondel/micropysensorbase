@@ -60,7 +60,16 @@ if "disable_inet" not in config.data or not config.data["disable_inet"]:
     try:
         import ntptime
 
-        gwntp = wifi.wlan.ipconfig("gw4")
+        intversion = sys.implementation.version[0]*100 + sys.implementation.version[1]
+        logger.info(f"DETECTED VERSION {sys.implementation.version=} => {intversion}")
+
+        gwntp = None
+
+        if intversion >= 124:
+            gwntp = wifi.wlan.ipconfig("gw4")
+        else:
+            gwntp = wifi.wlan.ifconfig()[2]
+
         poolntp = "pool.ntp.org"
         ntptime.timeout = 2
 
@@ -84,8 +93,8 @@ if "disable_inet" not in config.data or not config.data["disable_inet"]:
                 break
     except Exception as imex:
         _out = io.StringIO()
-        sys.print_exception(ex)
-        sys.print_exception(ex, _out)
+        sys.print_exception(imex)
+        sys.print_exception(imex, _out)
 
         logger.error(_out.getvalue())
 else:
