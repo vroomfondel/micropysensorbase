@@ -237,8 +237,12 @@ def setup_pins():
             logger.debug("smbus already created")
 
         if config.data["ina226"]["enabled"] and not ina:
+            ina_address = 0x40
+            if "address" in config.data["ina226"]:
+                ina_address = config.data["ina226"]["address"]
+
             ina = INA226(
-                smbus=smbus, max_expected_amps=config.data["ina226"]["max_expected_amps"], log_level=logging.INFO, shunt_ohms=config.data["ina226"]["shunt_ohms"]
+                address=ina_address, smbus=smbus, max_expected_amps=config.data["ina226"]["max_expected_amps"], log_level=logging.INFO, shunt_ohms=config.data["ina226"]["shunt_ohms"]
             )
             ina.configure(avg_mode=ina.AVG_16BIT)  # make avg-mode configurable ?!
 
@@ -463,8 +467,11 @@ def ina226_measure_masked_arg(arg: int):
     if WATCHDOG:
         WATCHDOG.feed()
 
-    send_data_forced: bool = bool(arg ^ 0b10)
-    send_data_enabled: bool = bool((arg ^ 0b01) >> 1)
+    #send_data_forced: bool = bool(arg ^ 0b10)
+    #send_data_enabled: bool = bool((arg ^ 0b01) >> 1)
+
+    send_data_forced: bool = bool(arg & 0b10)
+    send_data_enabled: bool = bool(arg & 0b01)
 
     acquired: bool = False
     try:
@@ -582,15 +589,19 @@ def ina226_measure(send_data_forced: bool = False, send_data_enabled: bool = Fal
             break
 
 
+send_data_forced_always: bool = False
 def ina226_measure_callback(trigger):
     global WATCHDOG
+    global send_data_forced_always
+
     logger.debug(f"{type(trigger)=} {trigger=}")
     # ina219measureCB::type(trigger)=<class 'Timer'> trigger=Timer(3ffea620; alarm_en=1, auto_reload=1, counter_en=1)
 
-    send_data_forced: bool = False
+    send_data_forced: bool = send_data_forced_always
     send_data_enabled: bool = True
 
-    arg: int = send_data_forced | send_data_enabled << 1
+    # arg: int = send_data_forced | send_data_enabled << 1
+    arg: int = (send_data_forced << 1) | send_data_enabled
 
     if WATCHDOG:
         WATCHDOG.feed()
