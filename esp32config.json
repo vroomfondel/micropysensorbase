@@ -54,7 +54,7 @@
     "ina226": {
         "enabled": false,
         "shunt_ohms": 0.1,
-        "max_expected_amps": 0.5,
+        "max_expected_amps": 0.05,
         "address": 64
     },
     "adc": {

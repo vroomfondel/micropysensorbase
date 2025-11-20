@@ -20,6 +20,9 @@ REPLACE_CONFIG_WITH_LOCAL_CONFIG_IF_EXISTS: bool = True
 
 logger.debug(f"{UPDATE_CONFIG_WITH_LOCAL_CONFIG_IF_EXISTS=} {REPLACE_CONFIG_WITH_LOCAL_CONFIG_IF_EXISTS=}")
 
+data_orig: dict | None = None
+ndata: dict | None = None
+
 data: dict | None = None
 data_local: dict | None = None
 
@@ -103,8 +106,10 @@ logger.debug(f"{mac_no_colon=}")
 
 if mac_no_colon in data:
     logger.info(f"{mac_no_colon=} FOUND in config-data")
-    ndata: dict = data[mac_no_colon]
+    ndata = data[mac_no_colon]
     logger.debug("**************\n" + _pprint_format(data) + "\n***")
+
+    data_orig = ujson.loads(ujson.dumps(data))
 
     update_deep(data, ndata)
 
