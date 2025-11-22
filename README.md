@@ -32,6 +32,12 @@ of the drainage pumps and their triggering.
     [<img src="media/PXL_20251118_094316034.png" width="650">](...)
     [<img src="media/PXL_20251118_094311591.png" width="650">](...)
 
+#### **(Update 2025-11-22)** FreeCAD :: PCB :: Enclosure
+  * [<img src="media/Bildschirmfoto_freecad_espbox_sideview.png" width="650">](media/esp32ina226pcbbox-sideview.pdf)
+  * [esp32ina226pcbbox.FCStd](media/esp32ina226pcbbox.FCStd)
+  * [esp32ina226pcbbox-BoxBase.stl](media/esp32ina226pcbbox-BoxBase.stl)
+  * [esp32ina226pcbbox-BoxLid.stl](media/esp32ina226pcbbox-BoxLid.stl)
+
 #### software / environment
   * wifi
   * installed mqtt-server (we used a local mosquitto instance for that purpose)
