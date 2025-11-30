@@ -1,3 +1,9 @@
+-r requirements.txt
+
+micropython-esp32-esp32-generic-s3-stubs
+# pip install micropython-esp32-esp32-generic-s3-stubs --target typings --no-user
+
+mypy
 adafruit-ampy
-micropython-esp32-stubs
 webrepl
+
