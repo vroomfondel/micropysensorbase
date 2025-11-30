@@ -32,7 +32,7 @@ logger.setLevel(logging.DEBUG)
 
 import config
 
-if "boot_ssd" in config.data and config.data["boot_ssd"]:
+if "boot_ssd" in config.data and config.get_config_data_bool(config.data, "boot_ssd"):
     try:
         import boot_ssd
         boot_ssd.setup()
@@ -45,7 +45,7 @@ if "boot_ssd" in config.data and config.data["boot_ssd"]:
         sys.print_exception(ex, _out)
 
         logger.error(_out.getvalue())
-        time.sleep(2)
+        time.sleep(2)  # type: ignore
 
 
 import sys
@@ -87,7 +87,7 @@ if "disable_inet" not in config.data or not config.data["disable_inet"]:
                     sys.print_exception(ex, _out)
 
                     logger.error(_out.getvalue())
-                    time.sleep(2)
+                    time.sleep(2)  # type: ignore
 
             if time.get_had_proper_time_set():
                 break

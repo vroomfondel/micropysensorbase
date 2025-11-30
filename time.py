@@ -6,7 +6,7 @@ import sys
 # https://docs.micropython.org/en/latest/library/index.html#extending-built-in-libraries-from-python
 
 _path = sys.path
-sys.path = ()
+sys.path = ()  # type: ignore
 
 try:
     from time import *  # type: ignore
@@ -53,7 +53,7 @@ _MDAY = const(
 )
 
 
-def strftime(datefmt, ts):
+def strftime(datefmt: str, ts: tuple):
     from io import StringIO
 
     fmtsp = False

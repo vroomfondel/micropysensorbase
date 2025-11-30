@@ -3,7 +3,7 @@ import sys
 import time
 import logging
 import micropython
-from time import sleep
+from time import sleep  # type: ignore[attr-defined]
 from machine import Timer, WDT
 import machine
 
@@ -23,10 +23,10 @@ logger.debug("STARTING main.py")
 
 DISABLE_INET: bool = False
 
-if "disable_inet" in config.data and config.data["disable_inet"]:
+if "disable_inet" in config.data and config.get_config_data_bool(config.data, "disable_inet"):
     DISABLE_INET = True
 
-if "disable_autosetup" in config.data and config.data["disable_autosetup"]:
+if "disable_autosetup" in config.data and config.get_config_data_bool(config.data, "disable_autosetup"):
     DISABLED_AUTO_SETUP = True
 
 if not DISABLE_INET:
@@ -43,24 +43,25 @@ lock = _thread.allocate_lock()
 WATCHDOG: WDT|None = None
 
 
-def reboot_callback(_=None):
+def reboot_callback(_: object=None) -> None:
     micropython.schedule(reboot_trigger, None)
 
 
-def reboot_trigger(_=None):
+def reboot_trigger(_: object=None) -> None:
     timestring: str = time.getisotimenow()
     logger.info(f"{timestring}::rebooting...")
-    mqttwrap.publish_one(
-        topic=mqttwrap.get_feed("loggingfeed"),
-        msg=f"rebooting at {timestring}",
-        retain=True,
-        qos=1,
-        reset_if_mqtt_fails=True
-    )
+    if mqttwrap is not None:
+        mqttwrap.publish_one(
+            topic=mqttwrap.get_feed("loggingfeed"),
+            msg=f"rebooting at {timestring}",
+            retain=True,
+            qos=1,
+            reset_if_mqtt_fails=True
+        )
     machine.reset()
 
 
-def check_msgs(_=None):
+def check_msgs(_: object=None) -> None:
     global lock, DISABLE_INET, WATCHDOG
 
     if WATCHDOG:
@@ -116,7 +117,7 @@ def check_msgs(_=None):
         WATCHDOG.feed()
 
 
-def check_msgs_callback(_=None):
+def check_msgs_callback(_: object=None) -> None:
     global WATCHDOG
     # logger.debug(f"{type(trigger)=} {trigger=}")
     # DEBUG:__main__:type(trigger)=<class 'Timer'> trigger=Timer(0, mode=PERIODIC, period=3000)
@@ -134,19 +135,30 @@ from sh1106 import SH1106_I2C
 from usmbus import SMBus
 from ina226_raspi import INA226
 
-# import boot_ssd
-# ssd: SH1106_I2C | SSD1306_I2C | None = boot_ssd.ssd
-# sdapin: machine.Pin | None = boot_ssd.sdapin
-# sclpin: machine.Pin | None = boot_ssd.sclpin
-# soft_i2cbus: machine.SoftI2C | None = boot_ssd.soft_i2cbus
-# boot_ssd.disable()
+soft_i2cbus: machine.SoftI2C | None = None
+ssd: SH1106_I2C | SSD1306_I2C | None = None
+
+sdapin: machine.Pin | None = None
+sclpin: machine.Pin | None = None
 
 smbus_sdapin: machine.Pin | None = None
 smbus_sclpin: machine.Pin | None = None
 
-sdapin: machine.Pin | None = None
-sclpin: machine.Pin | None = None
 smbus: SMBus | None = None
+
+if "boot_ssd" in config.data and config.get_config_data_bool(config.data, "boot_ssd"):
+    logger.debug("boot_ssd was active... flipping from there...")
+    import boot_ssd
+    ssd = boot_ssd.ssd
+    sdapin = boot_ssd.sdapin
+    sclpin = boot_ssd.sclpin
+    soft_i2cbus = boot_ssd.soft_i2cbus
+    boot_ssd.disable()
+    logger.debug("\t-> flipping done")
+
+    # TODO HT20251130 check what happens with sdapin vs smbus_sdapin etc...
+
+
 
 ina: INA226 | None = None
 
@@ -173,14 +185,14 @@ MEASURETIMER_PERIOD_MS: int = 10_000
 
 last_measure_sent_gmt: float | None = None
 
-def handle_pin_interrupt_falling_rising(arg_pin: machine.Pin):
+def handle_pin_interrupt_falling_rising(arg_pin: machine.Pin) -> None:
     global pin_low
     v: float | bool | int = arg_pin.value()
     pin_low = 0 == v
     logger.debug(f"handle_pin_value :: {v} {arg_pin=}")
 
 
-def setup_pins():
+def setup_pins() -> None:
     global adc_input_pin, digital_input_pin, input_adc, pin_low, output_pin, output_pin_pwm, output_pwm, uart2
     global soft_i2cbus, sdapin, sclpin, ssd, wakeup_deepsleep_pin, smbus, ina, smbus_sdapin, smbus_sclpin
 
@@ -215,14 +227,15 @@ def setup_pins():
 
     logger.info("Setting up pins")
 
-    if config.data["smbus"]["enabled"]:
+    smbusc: dict[str, str | float | int | bool] = config.get_config_data_dict(config.data, "smbus")
+    if config.get_config_data_bool(smbusc, "enabled"):
         if not smbus_sdapin:
-            smbus_sdapin = machine.Pin(config.data["smbus"]["sda_pin"])
+            smbus_sdapin = machine.Pin(config.get_config_data_int(smbusc, "sda_pin"))
         else:
             logger.debug("smbus_sdapin already created")
 
         if not smbus_sclpin:
-            smbus_sclpin = machine.Pin(config.data["smbus"]["scl_pin"])
+            smbus_sclpin = machine.Pin(config.get_config_data_int(smbusc, "scl_pin"))
         else:
             logger.debug("smbus_sclpin already created")
 
@@ -236,26 +249,36 @@ def setup_pins():
         else:
             logger.debug("smbus already created")
 
-        if config.data["ina226"]["enabled"] and not ina:
+        ina226c: dict[str, str | float | int | bool] = config.get_config_data_dict(config.data, "ina226")
+        if config.get_config_data_bool(ina226c, "enabled") and not ina:
             ina_address = 0x40
-            if "address" in config.data["ina226"]:
-                ina_address = config.data["ina226"]["address"]
+            if "address" in ina226c:
+                ina_address = config.get_config_data_int(ina226c, "address")
 
             ina = INA226(
-                address=ina_address, smbus=smbus, max_expected_amps=config.data["ina226"]["max_expected_amps"], log_level=logging.INFO, shunt_ohms=config.data["ina226"]["shunt_ohms"]
+                address=ina_address,
+                smbus=smbus,
+                max_expected_amps=config.get_config_data_float(ina226c, "max_expected_amps"),
+                log_level=logging.INFO,
+                shunt_ohms=config.get_config_data_float(ina226c, "shunt_ohms")
             )
-            ina.configure(avg_mode=ina.AVG_4BIT, bus_ct=ina.VCT_204us_BIT, shunt_ct=ina.VCT_8244us_BIT)  # make avg-mode configurable ?!
+            ina.configure(
+                avg_mode=ina.AVG_4BIT,
+                bus_ct=ina.VCT_204us_BIT,
+                shunt_ct=ina.VCT_8244us_BIT
+            )  # make avg-mode configurable ?!
+
             # ina.configure(avg_mode=ina.AVG_1024BIT, bus_ct=ina.VCT_204us_BIT, shunt_ct=ina.VCT_8244us_BIT)  # make avg-mode configurable ?!
 
-
-    if config.data["i2c"]["enabled"]:
+    i2c: dict[str, str | float | int | bool] = config.get_config_data_dict(config.data, "i2c")
+    if config.get_config_data_bool(i2c, "enabled"):
         if not sdapin:
-            sdapin = machine.Pin(config.data["i2c"]["sda_pin"])
+            sdapin = machine.Pin(config.get_config_data_int(i2c, "sda_pin"))
         else:
             logger.debug("sdapin already created")
 
         if not sclpin:
-            sclpin = machine.Pin(config.data["i2c"]["scl_pin"])
+            sclpin = machine.Pin(config.get_config_data_int(i2c, "scl_pin"))
         else:
             logger.debug("sclpin already created")
 
@@ -263,19 +286,25 @@ def setup_pins():
             soft_i2cbus = machine.SoftI2C(scl=sclpin, sda=sdapin)
             logger.debug(f"{soft_i2cbus=}")
 
-            k: list = soft_i2cbus.scan()
-            for i in k:
+            i2ck: list = soft_i2cbus.scan()
+            for i in i2ck:
                 logger.debug(f"i2c_scan: {i=}")
         else:
             logger.debug("i2c already created")
 
-        if not ssd and config.data["ssd1306"]["enabled"]:
-            flip_en: bool = False
-            if "flip_en" in config.data["ssd1306"] and config.data["ssd1306"]["flip_en"]:
+        flip_en: bool
+        ssd1306: dict[str, str | float | int | bool] = config.get_config_data_dict(config.data, "ssd1306")
+        if not ssd and config.get_config_data_bool(ssd1306, "enabled"):
+            flip_en = False
+            if "flip_en" in ssd1306 and config.get_config_data_bool(ssd1306, "flip_en"):
                 flip_en = True
 
-            ssd = SSD1306_I2C(width=config.data["ssd1306"]["width"], height=config.data["ssd1306"]["height"],
-                              i2c=soft_i2cbus, addr=config.data["ssd1306"]["address"])
+            ssd = SSD1306_I2C(
+                width=config.get_config_data_int(ssd1306, "width"),
+                height=config.get_config_data_int(ssd1306, "height"),
+                i2c=soft_i2cbus,
+                addr=config.get_config_data_int(ssd1306, "address")
+            )
             if flip_en:
                 ssd.rotate(180)
 
@@ -284,24 +313,35 @@ def setup_pins():
             ssd.text(f"_SCREEN_INIT", 0, 0, 1)
             ssd.show()
 
-        if not ssd and config.data["sh1106"]["enabled"]:
-            flip_en: bool = config.data["sh1106"]["flip_en"]
-            ssd = SH1106_I2C(width=config.data["sh1106"]["width"], height=config.data["sh1106"]["height"],
-                             i2c=soft_i2cbus, addr=config.data["sh1106"]["address"], rotate=180 if flip_en else 0)
+        sh1106: dict[str, str | float | int | bool] = config.get_config_data_dict(config.data, "sh1106")
+        if not ssd and config.get_config_data_bool(sh1106, "enabled"):
+            flip_en = False
+            if "flip_en" in sh1106 and config.get_config_data_bool(sh1106, "flip_en"):
+                flip_en = True
+
+            ssd = SH1106_I2C(
+                width=config.get_config_data_int(sh1106, "width"),
+                height=config.get_config_data_int(sh1106, "height"),
+                i2c=soft_i2cbus,
+                addr=config.get_config_data_int(sh1106, "address"),
+                rotate=180 if flip_en else 0
+            )
             ssd.init_display()
 
             ssd.text(f"_SCREEN_INIT", 0, 0, 1)
             ssd.show()
 
-    # TODO
-    if config.data["rotary"]["enabled"]:
+    rotary: dict[str, str | float | int | bool] = config.get_config_data_dict(config.data, "rotary")
+    if config.get_config_data_bool(rotary, "enabled"):
         ...
+        # TODO
 
-    if config.data["adc"]["enabled"]:
-        pin: int = config.data["adc"]["input_pin"]
-        adc_input_pin = machine.Pin(pin, machine.Pin.IN)
+    adc: dict[str, str | float | int | bool] = config.get_config_data_dict(config.data, "adc")
+    if config.get_config_data_bool(adc, "enabled"):
+        ipin: int = config.get_config_data_int(adc, "input_pin")
+        adc_input_pin = machine.Pin(ipin, machine.Pin.IN)
 
-        logger.info(f"Setting up ADC on PIN {pin}")
+        logger.info(f"Setting up ADC on PIN {ipin}")
         input_adc = machine.ADC(adc_input_pin, atten=machine.ADC.ATTN_11DB)  # TN_11DB)
         input_adc.width(machine.ADC.WIDTH_12BIT)
         # adc.atten(ADC.ATTN_11DB)       #Full range: 3.3v
@@ -310,49 +350,58 @@ def setup_pins():
         # ADC.ATTN_6DB: 6dB attenuation, gives a maximum input voltage of approximately 2.00v
         # ADC.ATTN_11DB: 11dB attenuation, gives a maximum input voltage of approximately 3.6v
 
-    if config.data["digital_output"]["enabled"]:
-        pin: int = config.data["digital_output"]["output_pin"]
-        logger.info(f"Setting up DIGITAL OUT on PIN {pin}")
+    digital_output: dict[str, str | float | int | bool] = config.get_config_data_dict(config.data, "digital_output")
+    if config.get_config_data_bool(digital_output, "enabled"):
+        opin: int = config.get_config_data_int(digital_output, "output_pin")
+        logger.info(f"Setting up DIGITAL OUT on PIN {opin}")
 
-        output_pin = machine.Pin(pin, machine.Pin.OUT)  # , pull=machine.Pin.PULL_DOWN)
+        output_pin = machine.Pin(opin, machine.Pin.OUT)  # , pull=machine.Pin.PULL_DOWN)
 
-    if config.data["digital_input"]["enabled"]:
-        digital_input_pin = machine.Pin(config.data["digital_input"]["input_pin"])
+    digital_input: dict[str, str | float | int | bool] = config.get_config_data_dict(config.data, "digital_input")
+    if config.get_config_data_bool(digital_input, "enabled"):
+        digital_input_pin = machine.Pin(config.get_config_data_int(digital_input, "input_pin"))
 
         pin_low = digital_input_pin.value() == 0
         digital_input_pin.irq(trigger=machine.Pin.IRQ_FALLING | machine.Pin.IRQ_RISING,
                               handler=handle_pin_interrupt_falling_rising)
 
-    if config.data["wakeup_deepsleep_pin"]["enabled"] and not config.data["rotary"]["enabled"]:
+    wakeup_deepsleep_pin_config:  dict[str, str | float | int | bool] = config.get_config_data_dict(config.data, "wakeup_deepsleep_pin")
+    if config.get_config_data_bool(wakeup_deepsleep_pin_config, "enabled") and not config.get_config_data_bool(rotary, "enabled"):
         import esp32
 
-        wakeup_deepsleep_pin = machine.Pin(config.data["wakeup_deepsleep_pin"]["input_pin"])
+        wakeup_deepsleep_pin = machine.Pin(config.get_config_data_int(wakeup_deepsleep_pin_config, "input_pin"))
 
         trigger_level = esp32.WAKEUP_ANY_HIGH
-        if "trigger" in config.data["wakeup_deepsleep_pin"]:
-            trigger_level = esp32.WAKEUP_ANY_HIGH if config.data["wakeup_deepsleep_pin"][
-                                                         "trigger"] == 1 else esp32.WAKEUP_ALL_LOW
+        if "trigger" in wakeup_deepsleep_pin_config:
+            trigger_level = esp32.WAKEUP_ANY_HIGH if config.get_config_data_int(wakeup_deepsleep_pin_config, "trigger") == 1 else esp32.WAKEUP_ALL_LOW
 
         logger.info(
-            f'setting external wakeup-signal to HIGH on PIN#{config.data["wakeup_deepsleep_pin"]["input_pin"]} {trigger_level=}')
+            f'setting external wakeup-signal to HIGH on PIN#{config.get_config_data_int(wakeup_deepsleep_pin_config, "input_pin")} {trigger_level=}')
 
-        if not "disable_handler" in config.data["wakeup_deepsleep_pin"] or not config.data["wakeup_deepsleep_pin"][
-            "disable_handler"]:
-            wakeup_deepsleep_pin.irq(trigger=machine.Pin.IRQ_FALLING | machine.Pin.IRQ_RISING,
-                                     handler=handle_pin_interrupt_falling_rising)
+        if not "disable_handler" in wakeup_deepsleep_pin_config or not config.get_config_data_bool(wakeup_deepsleep_pin_config, "disable_handler"):
+            wakeup_deepsleep_pin.irq(
+                trigger=machine.Pin.IRQ_FALLING | machine.Pin.IRQ_RISING,
+                handler=handle_pin_interrupt_falling_rising
+            )
 
         esp32.wake_on_ext0(wakeup_deepsleep_pin, trigger_level)
 
-    if config.data["pwm"]["enabled"]:
-        pin: int = config.data["pwm"]["output_pin"]
+    pwm: dict[str, str | float | int | bool] = config.get_config_data_dict(config.data,"pwm")
+    if config.get_config_data_bool(pwm, "enabled"):
+        pin: int = config.get_config_data_int(pwm, "output_pin")
         logger.info(f"Setting up PWM on PIN {pin}")
 
         output_pin_pwm = machine.Pin(pin)
-        output_pwm = machine.PWM(output_pin_pwm, duty=0, freq=50_000)
+        output_pwm = machine.PWM(
+            output_pin_pwm,
+            duty_u16=0,
+            freq=50_000
+        )
 
-    if config.data["uart"]["enabled"]:
-        rxpin: int = config.data["uart"]["rx_pin"]
-        txpin: int = config.data["uart"]["tx_pin"]
+    uart: dict[str, str | float | int | bool] = config.get_config_data_dict(config.data, "uart")
+    if config.get_config_data_bool(uart, "enabled"):
+        rxpin: int = config.get_config_data_int(uart, "rx_pin")
+        txpin: int = config.get_config_data_int(uart, "tx_pin")
 
         logger.info(f"Setting up UART on PINs {rxpin} + {txpin}")
         if rxpin == 16 and txpin == 17:
@@ -422,7 +471,7 @@ def ina226read(ina226: INA226) -> INAREADDATA:
     return inadata
 
 
-def send_data_to_mosquitto(inadata: INAREADDATA):
+def send_data_to_mosquitto(inadata: INAREADDATA) -> None:
     global DISABLE_INET
 
     if DISABLE_INET:
@@ -462,7 +511,7 @@ def send_data_to_mosquitto(inadata: INAREADDATA):
     )
 
 
-def ina226_measure_masked_arg(arg: int):
+def ina226_measure_masked_arg(arg: int) -> None:
     global lock, WATCHDOG
 
     if WATCHDOG:
@@ -510,17 +559,19 @@ def ina226_measure_masked_arg(arg: int):
 
 
 
-def ina226_measure(send_data_forced: bool = False, send_data_enabled: bool = False):
+def ina226_measure(send_data_forced: bool = False, send_data_enabled: bool = False) -> None:
     global last_measure_sent_gmt, last_measure_sent_data, MEASURE_TELE_PERIOD, ina, WATCHDOG
 
     if WATCHDOG:
         WATCHDOG.feed()
 
-    now: float = time.mktime(time.gmtime())
+    now: float = time.mktime(time.gmtime())  # type: ignore[attr-defined]
     send_data_overdue: bool = (
         not last_measure_sent_gmt or now - last_measure_sent_gmt > MEASURE_TELE_PERIOD
     )
     logger.debug(f"{send_data_overdue=} {send_data_forced=}")
+
+    assert ina is not None
 
     ct: int = 0
     while 1:
@@ -591,7 +642,7 @@ def ina226_measure(send_data_forced: bool = False, send_data_enabled: bool = Fal
 
 
 send_data_forced_always: bool = False
-def ina226_measure_callback(trigger):
+def ina226_measure_callback(trigger: Timer) -> None:
     global WATCHDOG
     global send_data_forced_always
 
@@ -613,7 +664,7 @@ def ina226_measure_callback(trigger):
         WATCHDOG.feed()
 
 
-def setup():
+def setup() -> None:
     global msgtimer, measuretimer, MEASURETIMER_PERIOD_MS, CKMSGS_PERIOD_MS, WATCHDOG
 
     if config.ENABLE_WATCHDOG:
@@ -641,9 +692,9 @@ def setup():
         period=MEASURETIMER_PERIOD_MS, mode=machine.Timer.PERIODIC, callback=ina226_measure_callback
     )
 
-    if config.data["forcerestart_after_running_seconds"] > 0:
+    if config.get_config_data_int(config.data, "forcerestart_after_running_seconds") > 0:
         reboottimer.init(
-            period=config.data["forcerestart_after_running_seconds"] * 1000,
+            period=config.get_config_data_int(config.data, "forcerestart_after_running_seconds") * 1_000,
             mode=machine.Timer.ONE_SHOT,
             callback=reboot_callback,
         )
@@ -655,13 +706,19 @@ def setup():
     if WATCHDOG:
         WATCHDOG.feed()
 
-def whoami():
-    logger.info(wifi.wlan.config("hostname") + "\t" + mqttwrap.boottime_local_str)
+def whoami() -> str:
+    ret: str = wifi.wlan.config("hostname") + "\t" + mqttwrap.boottime_local_str
+    logger.info(ret)
+    return ret
 
+def main() -> None:
+    global ina
 
-def main():
     logger.debug("START::main::main()")
-    ina226_measure(send_data_enabled=True)
+
+    if ina is not None:
+        ina226_measure(send_data_enabled=True)
+
     logger.debug("DONE::main::main()")
 
 

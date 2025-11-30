@@ -22,19 +22,22 @@ sdapin: machine.Pin | None = None
 sclpin: machine.Pin | None = None
 soft_i2cbus: machine.SoftI2C | None = None
 
-def setup_pins():
+def setup_pins() -> None:
     global soft_i2cbus, sdapin, sclpin, ssd
 
     logger.info("Setting up pins")
 
-    if config.data["i2c"]["enabled"]:
+    assert config.data is not None
+    # if "i2c" in config.data and isinstance(config.data["i2c"], dict) and config.data["i2c"].get("enabled", False) == True:
+    i2c: dict[str, str|float|int|bool] = config.get_config_data_dict(config.data, "i2c")
+    if config.get_config_data_bool(i2c, "enabled"):
         if not sdapin:
-            sdapin = machine.Pin(config.data["i2c"]["sda_pin"])
+            sdapin = machine.Pin(config.get_config_data_int(i2c, "sda_pin"))
         else:
             logger.debug("sdapin already created")
 
         if not sclpin:
-            sclpin = machine.Pin(config.data["i2c"]["scl_pin"])
+            sclpin = machine.Pin(config.get_config_data_int(i2c, "scl_pin"))
         else:
             logger.debug("sclpin already created")
 
@@ -48,13 +51,19 @@ def setup_pins():
         else:
             logger.debug("i2c already created")
 
-        if config.data["ssd1306"]["enabled"]:
-            flip_en: bool = False
-            if "flip_en" in config.data["ssd1306"] and config.data["ssd1306"]["flip_en"]:
+        flip_en: bool
+        ssd1306: dict[str, str|float|int|bool] = config.get_config_data_dict(config.data, "ssd1306")
+        if config.get_config_data_bool(ssd1306, "enabled"):
+            flip_en = False
+            if "flip_en" in ssd1306 and config.get_config_data_bool(ssd1306, "flip_en"):
                 flip_en = True
 
-            ssd = SSD1306_I2C(width=config.data["ssd1306"]["width"], height=config.data["ssd1306"]["height"],
-                              i2c=soft_i2cbus, addr=config.data["ssd1306"]["address"])
+            ssd = SSD1306_I2C(
+                width=config.get_config_data_int(ssd1306, "width"),
+                height=config.get_config_data_int(ssd1306, "height"),
+                i2c=soft_i2cbus,
+                addr=config.get_config_data_int(ssd1306, "address")
+            )
             if flip_en:
                 ssd.rotate(180)
 
@@ -63,28 +72,41 @@ def setup_pins():
             ssd.text(f"_SCREEN_INIT", 0, 0, 1)
             ssd.show()
 
-        if config.data["sh1106"]["enabled"]:
-            flip_en: bool = config.data["sh1106"]["flip_en"]
-            ssd = SH1106_I2C(width=config.data["sh1106"]["width"], height=config.data["sh1106"]["height"],
-                             i2c=soft_i2cbus, addr=config.data["sh1106"]["address"], rotate=180 if flip_en else 0)
+        sh1106: dict[str, str | float | int | bool] = config.get_config_data_dict(config.data, "sh1106")
+        if config.get_config_data_bool(sh1106, "enabled"):
+            flip_en = False
+            if "flip_en" in sh1106 and config.get_config_data_bool(sh1106, "flip_en"):
+                flip_en = True
+
+            ssd = SH1106_I2C(
+                width=config.get_config_data_int(sh1106, "width"),
+                height=config.get_config_data_int(sh1106, "height"),
+                i2c=soft_i2cbus,
+                addr=config.get_config_data_int(sh1106, "address"),
+                rotate=180 if flip_en else 0
+            )
             ssd.init_display()
 
             ssd.text(f"_SCREEN_INIT", 0, 0, 1)
             ssd.show()
 
 
-def init_ssd():
+def init_ssd() -> None:
     global ssd
+    if not ssd:
+        logger.debug("ssd is None")
+        return
+
     ssd.poweron()
     ssd.fill(0)
     ssd.text("_SCREEN_INIT", 0, 12, 1)
     ssd.show()
 
-def setup():
+def setup() -> None:
     setup_pins()
     init_ssd()
 
-def disable():
+def disable() -> None:
     global ssd, sdapin, sclpin, soft_i2cbus
 
     ssd = None

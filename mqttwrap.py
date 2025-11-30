@@ -11,7 +11,9 @@ import io
 from umqtt.simple import MQTTClient as MQTTClientSimple
 
 
-def wait_msg(self):
+def wait_msg(self: MQTTClientSimple) -> None|int:
+    assert self.sock is not None
+
     res = self.sock.read(1)
     self.sock.setblocking(True)
     if res is None:
@@ -39,17 +41,18 @@ def wait_msg(self):
     # do not ignore retained
     retained = op & 0x01
 
+    assert self.cb is not None
     self.cb(topic, msg, retained == 1)
     if op & 6 == 2:
         pkt = bytearray(b"\x40\x02\0\0")
-        struct.pack_into("!H", pkt, 2, pid)
+        struct.pack_into("!H", pkt, 2, pid)  # type: ignore
         self.sock.write(pkt)
     elif op & 6 == 4:
         assert 0
     return op
 
 
-MQTTClientSimple.wait_msg = wait_msg
+MQTTClientSimple.wait_msg = wait_msg  # type: ignore
 #### /monkeypatching galore!!! ####
 
 # from umqtt.robust import MQTTClient
@@ -66,25 +69,18 @@ TELE_PERIOD: int = 60
 
 last_status_gmt: float | None = None
 
-try:
-    import ujson
-except Exception as ex:
-    import json as ujson
-
-try:
-    import usocket as socket
-except:
-    import socket
+import json
+import socket
 
 import logging
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-boottime_gmt: float = time.mktime(time.gmtime())
+boottime_gmt: float = time.mktime(time.gmtime())  # type: ignore[attr-defined]
 boottime_local_str = time.getisotime(boottime_gmt)
 
-_lastping: int = time.time()
+_lastping: int = time.time()  # type: ignore[attr-defined]
 
 _mqttclient: MQTTClient | None = None
 _keepalive: int = 60
@@ -102,14 +98,16 @@ def format_with_clientid(topic: str) -> str:
     return topic.format(clientid=get_client_id())
 
 
-def get_feed(feedname: str) -> str | None:
-    return format_with_clientid(config.data["mosquitto"][feedname])
+def get_feed(feedname: str) -> str:
+    mos: dict[str, str|float|int] = config.data["mosquitto"]  # type: ignore
+    fn: str = mos[feedname]  # type: ignore
+    return format_with_clientid(fn)
 
 
 mosquitto_to_send_base_data: dict = {
-    "lat": config.data["mosquitto"]["lat_loc2"],
-    "lon": config.data["mosquitto"]["lon_loc2"],
-    "ele": config.data["mosquitto"]["ele_loc2"],
+    "lat": config.data["mosquitto"]["lat_loc2"],  # type: ignore
+    "lon": config.data["mosquitto"]["lon_loc2"],  # type: ignore
+    "ele": config.data["mosquitto"]["ele_loc2"],  # type: ignore
 }
 
 
@@ -121,12 +119,12 @@ def pop_cmd_received() -> tuple[int, str, str | None] | None:
     return None
 
 
-def sub_cb(topic, msg, retained):
+def sub_cb(_topic: bytes, _msg: bytes, retained: bool) -> None:
     global _lastping
-    _lastping = time.time()
+    _lastping = time.time()  # type: ignore
 
-    msg: str = msg.decode("utf-8")
-    topic = topic.decode("utf-8")
+    msg: str = _msg.decode("utf-8")
+    topic = _topic.decode("utf-8")
     logger.info(f"{topic=} {msg=} {retained=}")
 
     if topic == _controlfeed:
@@ -142,12 +140,16 @@ def sub_cb(topic, msg, retained):
             _received_commands.append((_lastping, cmd, arg))
 
 
-def get_ip(host, port=80):
-    addr_info = socket.getaddrinfo(host, port)
-    return addr_info[0][-1][0]
+def get_ip(host: str, port: int = 80) -> str:
+    addr_info: list[tuple[int, int, int, str, tuple[str, int] | tuple[str, int, int, int]]] = socket.getaddrinfo(host, port)
+    # fe: tuple[int, int, int, str, tuple[str, int] | tuple[str, int, int, int]] = addr_info[0]
+    # fele: tuple[str, int] | tuple[str, int, int, int] = fe[-1]
+    # felefe: str = fele[0]
+    # return felefe
+    return addr_info[0][-1][0]  # type: ignore
 
 
-def ensure_mqtt_connect(watchdog: machine.WDT|None = None):
+def ensure_mqtt_connect(watchdog: machine.WDT|None = None) -> None:
     global _mqttclient, _keepalive, _controlfeed, _lastping, lock
 
     if watchdog:
@@ -160,11 +162,11 @@ def ensure_mqtt_connect(watchdog: machine.WDT|None = None):
         if _mqttclient is None:
             _mqttclient = MQTTClient(
                 client_id=get_client_id(),
-                server=config.data["mosquitto"]["MOSQUITTO_HOST"],
-                port=config.data["mosquitto"]["MOSQUITTO_PORT"],
+                server=config.data["mosquitto"]["MOSQUITTO_HOST"],  # type: ignore
+                port=config.data["mosquitto"]["MOSQUITTO_PORT"],  # type: ignore
                 keepalive=_keepalive,
-                password=config.data["mosquitto"]["MOSQUITTO_PASSWORD"],
-                user=config.data["mosquitto"]["MOSQUITTO_USERNAME"],
+                password=config.data["mosquitto"]["MOSQUITTO_PASSWORD"],  # type: ignore
+                user=config.data["mosquitto"]["MOSQUITTO_USERNAME"],  # type: ignore
             )
             if watchdog:
                 watchdog.feed()
@@ -172,7 +174,7 @@ def ensure_mqtt_connect(watchdog: machine.WDT|None = None):
             _mqttclient.set_callback(sub_cb)
 
             _mqttclient.set_last_will(
-                format_with_clientid(config.data["mosquitto"]["lwtfeed"]),
+                format_with_clientid(config.data["mosquitto"]["lwtfeed"]),  # type: ignore
                 "OFFLINE",
                 qos=1,
                 retain=True,
@@ -183,13 +185,13 @@ def ensure_mqtt_connect(watchdog: machine.WDT|None = None):
                 watchdog.feed()
 
             _mqttclient.publish(
-                format_with_clientid(config.data["mosquitto"]["lwtfeed"]),
+                format_with_clientid(config.data["mosquitto"]["lwtfeed"]),  # type: ignore
                 "ONLINE",
                 qos=1,
                 retain=True,
             )
 
-            _controlfeed = format_with_clientid(config.data["mosquitto"]["controlfeed"])
+            _controlfeed = format_with_clientid(config.data["mosquitto"]["controlfeed"])  # type: ignore
             _mqttclient.subscribe(
                 topic=_controlfeed
             )
@@ -202,7 +204,7 @@ def ensure_mqtt_connect(watchdog: machine.WDT|None = None):
         watchdog.feed()
 
 
-def ensure_mqtt_catch_reset(reset_if_mqtt_fails: bool = True, watchdog: machine.WDT|None = None):
+def ensure_mqtt_catch_reset(reset_if_mqtt_fails: bool = True, watchdog: machine.WDT|None = None) -> None:
     try:
         ensure_mqtt_connect(watchdog=watchdog)
     except Exception as ex:
@@ -218,7 +220,7 @@ def ensure_mqtt_catch_reset(reset_if_mqtt_fails: bool = True, watchdog: machine.
             logger.debug("RESETTING...in 60s")
             if watchdog:
                 logger.debug("\tor if watchdog kicks in")
-            time.sleep(60)
+            time.sleep(60)  # type: ignore[attr-defined]
             machine.reset()
 
 
@@ -229,10 +231,10 @@ def value_to_mqtt_string(
     d["created_at"] = time.getisotimenow() if created_at is None else created_at
     d["value"] = value
 
-    return ujson.dumps(d)
+    return json.dumps(d)
 
 
-def publish_one(topic: str, msg: str, qos: int = 1, retain: bool = True, reset_if_mqtt_fails: bool = True, watchdog: machine.WDT|None = None):
+def publish_one(topic: str, msg: str, qos: int = 1, retain: bool = True, reset_if_mqtt_fails: bool = True, watchdog: machine.WDT|None = None) -> None:
     global _lastping, _mqttclient, lock
 
     logger.debug(f"publish_one {topic=} {len(msg)=} {qos=}")
@@ -243,34 +245,36 @@ def publish_one(topic: str, msg: str, qos: int = 1, retain: bool = True, reset_i
         if watchdog:
             watchdog.feed()
 
+        assert _mqttclient is not None
         if reset_if_mqtt_fails:
             try:
                 _mqttclient.publish(topic=topic, msg=msg, retain=retain, qos=qos)
-            except Exception as ex:
+            except Exception as iex:
                 _timestring = time.getisotimenow()
 
                 _out = io.StringIO()
-                sys.print_exception(ex)
-                sys.print_exception(ex, _out)
+                sys.print_exception(iex)
+                sys.print_exception(iex, _out)
 
                 logger.error(_out.getvalue())
 
                 logger.debug("RESETTING...in 30s")
                 if watchdog:
                     logger.debug("\tor if watchdog kicks in")
-                time.sleep(30)
+                time.sleep(30)  # type: ignore[attr-defined]
                 machine.reset()
         else:
             _mqttclient.publish(topic=topic, msg=msg, retain=retain, qos=qos)
 
     logger.debug(f"published {topic=}")
-    _lastping = time.time()
+    _lastping = time.time()  # type: ignore[attr-defined]
 
     if watchdog:
         watchdog.feed()
 
 
-def check_msg(watchdog: machine.WDT|None = None) -> bool:
+def check_msg(watchdog: machine.WDT|None = None) -> None:
+    global _mqttclient
     if watchdog:
         watchdog.feed()
 
@@ -278,21 +282,23 @@ def check_msg(watchdog: machine.WDT|None = None) -> bool:
         if watchdog:
             watchdog.feed()
 
+        assert _mqttclient is not None
         _mqttclient.check_msg()
 
     if watchdog:
         watchdog.feed()
 
 
-def ping(reset_if_mqtt_fails: bool = True, watchdog: machine.WDT|None = None):
-    global _lastping, lock
-    now: int = time.time()
+def ping(reset_if_mqtt_fails: bool = True, watchdog: machine.WDT|None = None) -> None:
+    global _lastping, lock, _mqttclient
+    now: int = time.time()  # type: ignore[attr-defined]
     logger.debug("=> PING")
 
     with lock:
         if watchdog:
             watchdog.feed()
 
+        assert _mqttclient is not None
         if reset_if_mqtt_fails:
             try:
                 _mqttclient.ping()
@@ -309,7 +315,7 @@ def ping(reset_if_mqtt_fails: bool = True, watchdog: machine.WDT|None = None):
                 if watchdog:
                     logger.debug("\tor if watchdog kicks in...")
 
-                time.sleep(30)
+                time.sleep(30)  # type: ignore[attr-defined]
                 machine.reset()
         else:
             _mqttclient.ping()
@@ -319,17 +325,17 @@ def ping(reset_if_mqtt_fails: bool = True, watchdog: machine.WDT|None = None):
         if watchdog:
             watchdog.feed()
 
-def ping_if_needed(threshhold: int = 10, reset_if_mqtt_fails: bool = True, watchdog: machine.WDT|None = None):
+def ping_if_needed(threshhold: int = 10, reset_if_mqtt_fails: bool = True, watchdog: machine.WDT|None = None) -> None:
     global _keepalive
     global _lastping
-    now: int = time.time()
+    now: int = time.time()  # type: ignore[attr-defined]
     if now - _lastping > _keepalive - threshhold:
         # acquires own lock
         ping(reset_if_mqtt_fails=reset_if_mqtt_fails, watchdog=watchdog)
 
 
 
-def send_status_to_mosquitto(include_wifi_scan: bool = True, watchdog: machine.WDT|None = None, also_send_LWT: bool = True):
+def send_status_to_mosquitto(include_wifi_scan: bool = True, watchdog: machine.WDT|None = None, also_send_LWT: bool = True) -> None:
     global boottime_local_str, boottime_gmt, last_status_gmt
 
     ifconfig: tuple = wifi.ensure_wifi_catch_reset(reset_if_wifi_fails=True, watchdog=watchdog)
@@ -351,14 +357,14 @@ def send_status_to_mosquitto(include_wifi_scan: bool = True, watchdog: machine.W
     else:
         statusdata["wifi_scan"] = None
 
-    rtseconds: int = round(time.time() - boottime_gmt)
+    rtseconds: int = round(time.time() - boottime_gmt)  # type: ignore[attr-defined]
     statusdata["runtime_seconds"] = rtseconds
     statusdata["running_since"] = boottime_local_str
 
     statusdata["reboot_pending_in"] = -1
-    if config.data["forcerestart_after_running_seconds"] > 0:
+    if config.data["forcerestart_after_running_seconds"] > 0:  # type: ignore
         statusdata["reboot_pending_in"] = (
-                config.data["forcerestart_after_running_seconds"] - rtseconds
+                config.data["forcerestart_after_running_seconds"] - rtseconds  # type: ignore
         )
 
     msg: str = value_to_mqtt_string(value=statusdata)
@@ -374,7 +380,7 @@ def send_status_to_mosquitto(include_wifi_scan: bool = True, watchdog: machine.W
         watchdog=watchdog
     )
     # mqttwrap.loop()
-    last_status_gmt = time.mktime(time.gmtime())
+    last_status_gmt = time.mktime(time.gmtime())  # type: ignore
 
     if also_send_LWT:
         publish_one(
@@ -387,14 +393,14 @@ def send_status_to_mosquitto(include_wifi_scan: bool = True, watchdog: machine.W
         )
 
 
-def check_msgs(reset_if_mqtt_fails: bool = True, watchdog: machine.WDT|None = None):
+def check_msgs(reset_if_mqtt_fails: bool = True, watchdog: machine.WDT|None = None) -> None:
     """ also pings if needed """
     global last_status_gmt, TELE_PERIOD
 
     if watchdog:
         watchdog.feed()
 
-    now: float = time.mktime(time.gmtime())
+    now: float = time.mktime(time.gmtime())  # type: ignore[attr-defined]
     ll: float = -1
     if last_status_gmt:
         ll = now - last_status_gmt
@@ -422,7 +428,7 @@ def check_msgs(reset_if_mqtt_fails: bool = True, watchdog: machine.WDT|None = No
                 logger.debug("RESETTING...in 30s")
                 if watchdog:
                     logger.debug("\tor if watchdog kicks in...")
-                time.sleep(30)
+                time.sleep(30)  # type: ignore[attr-defined]
                 machine.reset()
             else:
                 raise ex
