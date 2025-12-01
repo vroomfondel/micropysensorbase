@@ -16,7 +16,7 @@ import _thread
 
 DISABLED_AUTO_SETUP: bool = False
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 logger.setLevel(logging.DEBUG)
 
 logger.debug("STARTING main.py")
