@@ -3,7 +3,7 @@ import micropython
 
 from ssd1306 import SSD1306_I2C
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 logger.setLevel(logging.DEBUG)
 
 logger.debug("STARTING main.py")
