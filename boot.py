@@ -24,9 +24,9 @@ import time
 # https://github.com/micropython/micropython-lib
 
 import logging
-logging.basicConfig(level=logging.DEBUG, format="%(asctime)s.%(msecs)03d - %(name)s - %(levelname)s - %(message)s")
+logging.basic_config(level=logging.DEBUG, format="%(asctime)s.%(msecs)03d - %(name)s - %(levelname)s - %(message)s")
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
