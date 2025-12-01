@@ -5,7 +5,7 @@ micropython.alloc_emergency_exception_buf(100)
 
 # serial stuff also here: https://github.com/micropython/micropython/blob/master/tools/pyboard.py
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 logger.setLevel(logging.DEBUG)
 
 logger.debug("STARTING boot_ssd.py")
