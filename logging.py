@@ -1,7 +1,13 @@
 # https://github.com/micropython/micropython-lib/blob/master/python-stdlib/logging/logging.py
+from io import TextIOWrapper, IOBase
+
 from micropython import const
 import io
 import sys
+
+if sys.implementation.name != 'micropython':
+    from stdlib._typeshed import MaybeNone, StrPath
+
 import time
 
 CRITICAL = const(50)
@@ -22,80 +28,83 @@ _level_dict = {
     NOTSET: "NOTSET",
 }
 
-_loggers = {}
-_stream = sys.stderr
+_loggers: dict[str, "Logger"] = {}
+_stream: io.TextIOBase | MaybeNone = sys.stderr
 _default_fmt = "%(levelname)s:%(name)s:%(message)s"
 _default_datefmt = "%Y-%m-%d %H:%M:%S"
 
 
 class LogRecord:
-    def set(self, name, level, message):
-        self.name = name
-        self.levelno = level
-        self.levelname = _level_dict[level]
+    def set(self, name: str, level: int, message: object) -> None:
+        self.name: str = name
+        self.levelno: int = level
+        self.levelname: str = _level_dict[level]
         self.message = message
-        self.ct = time.time()
-        self.msecs = int((self.ct - int(self.ct)) * 1000)
-        self.asctime = None
+        self.ct: float = time.time()  # type: ignore[attr-defined]
+        self.msecs: int = int((self.ct - int(self.ct)) * 1000)
+        self.asctime: str|None = None
 
 
 class Handler:
-    def __init__(self, level=NOTSET):
-        self.level = level
-        self.formatter = None
+    def __init__(self, level: int=NOTSET) -> None:
+        self.level: int = level
+        self.formatter: Formatter|None = None
 
-    def close(self):
+    def close(self) -> None:
         pass
 
-    def setLevel(self, level):
+    def setLevel(self, level: int) -> None:
         self.level = level
 
-    def setFormatter(self, formatter):
+    def set_formatter(self, formatter: "Formatter") -> None:
         self.formatter = formatter
 
-    def format(self, record):
+    def format(self, record: LogRecord) -> str:
+        assert self.formatter is not None
         return self.formatter.format(record)
 
 
 class StreamHandler(Handler):
-    def __init__(self, stream=None):
-        self.stream = _stream if stream is None else stream
-        self.terminator = "\n"
+    def __init__(self, stream: io.TextIOBase|io.TextIOWrapper|None=None) -> None:
+        super().__init__()
+        self.stream: io.TextIOBase = _stream if stream is None else stream
+        self.terminator: str = "\n"
 
-    def close(self):
+    def close(self) -> None:
         if hasattr(self.stream, "flush"):
             self.stream.flush()
 
-    def emit(self, record):
+    def emit(self, record: LogRecord) -> None:
         if record.levelno >= self.level:
             self.stream.write(self.format(record) + self.terminator)
 
 
 class FileHandler(StreamHandler):
-    def __init__(self, filename, mode="a", encoding="UTF-8"):
-        super().__init__(stream=open(filename, mode=mode, encoding=encoding))
+    def __init__(self, filename: StrPath, mode: str="a", encoding: str="UTF-8"):
+        super().__init__(stream=io.open(filename, mode=mode, encoding=encoding))
 
-    def close(self):
+    def close(self) -> None:
         super().close()
         self.stream.close()
 
 
 class Formatter:
-    def __init__(self, fmt=None, datefmt=None):
+    def __init__(self, fmt: str|None=None, datefmt: str|None=None):
+        super().__init__()
         self.fmt = _default_fmt if fmt is None else fmt
         self.datefmt = _default_datefmt if datefmt is None else datefmt
 
-    def usesTime(self):
+    def uses_time(self) -> bool:
         return "asctime" in self.fmt
 
-    def formatTime(self, datefmt, record):
+    def format_time(self, datefmt: str, record: LogRecord) -> str|None:
         if hasattr(time, "strftime"):
-            return time.strftime(datefmt, time.localtime(record.ct))
+            return time.strftime(datefmt, time.localtime(record.ct)) # type: ignore
         return None
 
-    def format(self, record):
-        if self.usesTime():
-            record.asctime = self.formatTime(self.datefmt, record)
+    def format(self, record: LogRecord) -> str:
+        if self.uses_time():
+            record.asctime = self.format_time(self.datefmt, record)
         return self.fmt % {
             "name": record.name,
             "message": record.message,
@@ -106,23 +115,23 @@ class Formatter:
 
 
 class Logger:
-    def __init__(self, name, level=NOTSET):
-        self.name = name
+    def __init__(self, name: str, level: int=NOTSET):
+        self.name: str = name
+        self.level: int = level
+        self.handlers: list[Handler] = []
+        self.record: LogRecord = LogRecord()
+
+    def setLevel(self, level: int) -> None:
         self.level = level
-        self.handlers = []
-        self.record = LogRecord()
 
-    def setLevel(self, level):
-        self.level = level
+    def is_enabled_for(self, level: int) -> bool:
+        return level >= self.get_effective_level()
 
-    def isEnabledFor(self, level):
-        return level >= self.getEffectiveLevel()
+    def get_effective_level(self) -> int:
+        return self.level or get_logger().level or _DEFAULT_LEVEL
 
-    def getEffectiveLevel(self):
-        return self.level or getLogger().level or _DEFAULT_LEVEL
-
-    def log(self, level, msg, *args):
-        if self.isEnabledFor(level):
+    def log(self, level: int, msg: str, *args: list[object]|None) -> None:
+        if self.is_enabled_for(level):
             if args:
                 if isinstance(args[0], dict):
                     args = args[0]
@@ -130,26 +139,27 @@ class Logger:
             self.record.set(self.name, level, msg)
             handlers = self.handlers
             if not handlers:
-                handlers = getLogger().handlers
+                handlers = get_logger().handlers
             for h in handlers:
-                h.emit(self.record)
+                if hasattr(h, "emit"):
+                    h.emit(self.record)
 
-    def debug(self, msg, *args):
+    def debug(self, msg: str, *args: None|list[object]) -> None:
         self.log(DEBUG, msg, *args)
 
-    def info(self, msg, *args):
+    def info(self, msg: str, *args: None|list[object]) -> None:
         self.log(INFO, msg, *args)
 
-    def warning(self, msg, *args):
+    def warning(self, msg: str, *args: None|list[object]) -> None:
         self.log(WARNING, msg, *args)
 
-    def error(self, msg, *args):
+    def error(self, msg: str, *args: None|list[object]) -> None:
         self.log(ERROR, msg, *args)
 
-    def critical(self, msg, *args):
+    def critical(self, msg: str, *args: None|list[object]) -> None:
         self.log(CRITICAL, msg, *args)
 
-    def exception(self, msg, *args, exc_info=True):
+    def exception(self, msg: str, *args: None|list[object], exc_info: BaseException|None=None) -> None:
         self.log(ERROR, msg, *args)
         tb = None
         if isinstance(exc_info, BaseException):
@@ -161,72 +171,74 @@ class Logger:
             sys.print_exception(tb, buf)
             self.log(ERROR, buf.getvalue())
 
-    def addHandler(self, handler):
+    def add_handler(self, handler: Handler) -> None:
         self.handlers.append(handler)
 
-    def hasHandlers(self):
+    def has_handlers(self) -> bool:
         return len(self.handlers) > 0
 
 
-def getLogger(name=None):
+def get_logger(name: str|None = None) -> Logger:
     if name is None:
         name = "root"
     if name not in _loggers:
         _loggers[name] = Logger(name)
         if name == "root":
-            basicConfig()
+            basic_config()
     return _loggers[name]
 
 
-def log(level, msg, *args):
-    getLogger().log(level, msg, *args)
+def log(level: int, msg: str, *args: None|list[object]) -> None:
+    get_logger().log(level, msg, *args)
 
 
-def debug(msg, *args):
-    getLogger().debug(msg, *args)
+def debug(msg: str, *args: None|list[object]) -> None:
+    get_logger().debug(msg, *args)
 
 
-def info(msg, *args):
-    getLogger().info(msg, *args)
+def info(msg: str, *args: None|list[object]) -> None:
+    get_logger().info(msg, *args)
 
 
-def warning(msg, *args):
-    getLogger().warning(msg, *args)
+def warning(msg: str, *args: None|list[object]) -> None:
+    get_logger().warning(msg, *args)
 
 
-def error(msg, *args):
-    getLogger().error(msg, *args)
+def error(msg: str, *args: None|list[object]) -> None:
+    get_logger().error(msg, *args)
 
 
-def critical(msg, *args):
-    getLogger().critical(msg, *args)
+def critical(msg: str, *args: None|list[object]) -> None:
+    get_logger().critical(msg, *args)
 
 
-def exception(msg, *args):
-    getLogger().exception(msg, *args)
+def exception(msg: str, *args: None|list[object]) -> None:
+    get_logger().exception(msg, *args)
 
 
-def shutdown():
+def shutdown() -> None:
     for k, logger in _loggers.items():
         for h in logger.handlers:
             h.close()
-        _loggers.pop(logger, None)
+
+        # _loggers.pop(logger, None)
+        _loggers.pop(k, None)
 
 
-def addLevelName(level, name):
+def add_level_name(level: int, name: str) -> None:
     _level_dict[level] = name
 
 
-def basicConfig(
-    filename=None,
-    filemode="a",
-    format=None,
-    datefmt=None,
-    level=WARNING,
-    stream=None,
-    encoding="UTF-8",
-    force=False,
-):
+def basic_config(
+    filename: str|None=None,
+    filemode: str="a",
+    format: str|None=None,
+    datefmt: str|None=None,
+    level: int=WARNING,
+    stream: TextIOWrapper|IOBase|None=None,
+    encoding: str="UTF-8",
+    force: bool=False,
+) -> None:
     if "root" not in _loggers:
         _loggers["root"] = Logger("root")
 
@@ -243,10 +255,10 @@ def basicConfig(
             handler = FileHandler(filename, filemode, encoding)
 
         handler.setLevel(level)
-        handler.setFormatter(Formatter(format, datefmt))
+        handler.set_formatter(Formatter(format, datefmt))
 
         logger.setLevel(level)
-        logger.addHandler(handler)
+        logger.add_handler(handler)
 
 
 if hasattr(sys, "atexit"):
