@@ -22,7 +22,7 @@ def to_bytes(register_value):
 
 def binary_as_string(register_value):
     r = bin(register_value)[2:]
-    logging.getLogger(__name__).debug(f"{type(r)=} {r=}")
+    logging.get_logger(__name__).debug(f"{type(r)=} {r=}")
     return f'{r:010s}'  #'{0:010d}'.format(r)  # r.format("0d16")  #.zfill(16)
 
 
@@ -149,12 +149,12 @@ class INA226:
         log_level -- set to logging.DEBUG to see detailed calibration
             calculations (optional).
         """
-        if len(logging.getLogger().handlers) == 0:
+        if len(logging.get_logger().handlers) == 0:
             # Initialize the root logger only if it hasn't been done yet by a
             # parent module.
-            logging.basicConfig(level=log_level, format=self.__LOG_FORMAT)
+            logging.basic_config(level=log_level, format=self.__LOG_FORMAT)
 
-        self.logger = logging.getLogger(__name__)
+        self.logger = logging.get_logger(__name__)
         self.logger.setLevel(log_level)
         self._address = address
         self._i2c = smbus
