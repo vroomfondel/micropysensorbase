@@ -3,7 +3,7 @@ import time
 import logging
 
 #logging.basicConfig(level=logging.DEBUG, format="%(asctime)s.%(msecs)03d - %(name)s - %(levelname)s - %(message)s")
-logger: logging.Logger = logging.getLogger(__name__)
+logger: logging.Logger = logging.get_logger(__name__)
 
 logger.setLevel(logging.DEBUG)
 
