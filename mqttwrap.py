@@ -74,7 +74,7 @@ import socket
 
 import logging
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 logger.setLevel(logging.INFO)
 
 boottime_gmt: float = time.mktime(time.gmtime())  # type: ignore[attr-defined]
