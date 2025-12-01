@@ -6,7 +6,7 @@ import logging
 
 import json
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 logger.setLevel(logging.INFO)
 
 DISABLE_INET: bool = False
