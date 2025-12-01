@@ -1,5 +1,6 @@
 import sys
 
+
 # Replace standard time.localtime()
 #
 # For more information about extending built in libraries, see:
@@ -53,11 +54,14 @@ _MDAY = const(
 )
 
 
-def strftime(datefmt: str, ts: tuple):
-    from io import StringIO
+def strftime(datefmt: str, ts: tuple) -> str:
+    import io
 
-    fmtsp = False
-    ftime = StringIO()
+    fmtsp: bool = False
+    ftime: io.StringIO = io.StringIO()
+
+    # assert hasattr(ftime, "write")
+
     for k in datefmt:
         if fmtsp:
             if k == "a":
@@ -102,26 +106,26 @@ def strftime(datefmt: str, ts: tuple):
     return val
 
 
-_LAST_SUNDAY_CACHE: dict[(int, int), int] = {}
+_LAST_SUNDAY_CACHE: dict[tuple[int, int], int] = {}
 def last_sunday(year: int, month: int, hour: int, minute: int) -> int:
     """Get the time of the last sunday of the month
     It returns an integer which is the number of seconds since Jan 1, 2000, just like mktime().
     """
 
     global _LAST_SUNDAY_CACHE
-    keytuple: (int, int) = (year, month)
+    keytuple: tuple[int, int] = (year, month)
 
     if keytuple in _LAST_SUNDAY_CACHE:
         return _LAST_SUNDAY_CACHE[keytuple]
 
     # Get the UTC time of the last day of the month
-    seconds = mktime((year, month + 1, 0, hour, minute, 0, None, None))
+    seconds = mktime((year, month + 1, 0, hour, minute, 0, None, None))  # type: ignore
 
     # Calculate the offset to the last sunday of the month
-    (year, month, mday, hour, minute, second, weekday, yearday) = gmtime(seconds)
+    (year, month, mday, hour, minute, second, weekday, yearday) = gmtime(seconds)  # type: ignore
     offset = (weekday + 1) % 7
 
-    ret: int = mktime((year, month, mday - offset, hour, minute, second, None, None))
+    ret: int = mktime((year, month, mday - offset, hour, minute, second, None, None))  # type: ignore
     _LAST_SUNDAY_CACHE[keytuple] = ret
 
     # Return the time of the last sunday of the month
@@ -158,25 +162,25 @@ def localtime(secs: int | None = None) -> tuple[int, int, int, int, int, int, in
     """ last int: timeoffset """
     global CETTIMEOFFSETHOURS
 
-    utc_time_tuple = gmtime(secs)
-    utc_secs = mktime(utc_time_tuple)
+    utc_time_tuple = gmtime(secs)  # type: ignore
+    utc_secs = mktime(utc_time_tuple)  # type: ignore
 
     mycettimeoffsethours = get_offsethours(utc_time_tuple[0], utc_secs)
 
     if not CETTIMEOFFSETHOURS or not HAD_PROPER_TIME_SET:
         CETTIMEOFFSETHOURS = mycettimeoffsethours
 
-    year, month, mday, hour, minute, second, weekday, yearday = gmtime(utc_secs + mycettimeoffsethours * 3600)
+    year, month, mday, hour, minute, second, weekday, yearday = gmtime(utc_secs + mycettimeoffsethours * 3600)  # type: ignore
 
     return year, month, mday, hour, minute, second, weekday, yearday, mycettimeoffsethours  # type: ignore
 
 def getisotime(timestamp_secs: float) -> str:
-    dd = localtime(timestamp_secs)
+    dd = localtime(timestamp_secs)  # type: ignore
     offsethours: int = dd[-1]
     return f"{dd[0]:02d}-{dd[1]:02d}-{dd[2]:02d}T{dd[3]:02d}:{dd[4]:02d}:{dd[5]:02d}+{offsethours:02d}:00"
 
 def getisotimenow() -> str:
-    dd: float = mktime(gmtime())
+    dd: float = mktime(gmtime())  # type: ignore
     return getisotime(dd)
 
 def set_had_proper_time_set(timesetproperly: bool = False) -> None:
