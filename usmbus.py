@@ -38,12 +38,12 @@ class SMBus():  # machine.I2C):
         self.sda = sda
         self.freq = freq
 
-        if len(logging.getLogger().handlers) == 0:
+        if len(logging.get_logger().handlers) == 0:
             # Initialize the root logger only if it hasn't been done yet by a
             # parent module.
-            logging.basicConfig(level=log_level, format=self.__LOG_FORMAT)
+            logging.basic_config(level=log_level, format=self.__LOG_FORMAT)
 
-        self.logger = logging.getLogger(__name__)
+        self.logger = logging.get_logger(__name__)
         self.logger.setLevel(log_level)
 
         #(0, scl=machine.Pin(22), sda = machine.Pin(21), freq = 400_000)
