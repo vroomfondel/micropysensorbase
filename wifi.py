@@ -13,7 +13,7 @@ wlan_scanlist: list[str] = ["wifi1", "wifi2", "wifi3"]
 
 import logging
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 logger.setLevel(logging.DEBUG)
 
 mac = ubinascii.hexlify(network.WLAN().config('mac'), ':').decode()
