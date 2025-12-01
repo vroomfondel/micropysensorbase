@@ -29,6 +29,7 @@ micropython driver for the INA226 current sensor.
 * Author(s): Christian Becker
 
 """
+import machine
 # taken from https://github.com/robert-hh/INA219 , modified for the INA226 devices by
 # Christian Becker
 # June 2020
@@ -109,7 +110,7 @@ _REG_CALIBRATION = const(0x05)
 # pylint: enable=bad-whitespace
 
 
-def _to_signed(num):
+def _to_signed(num: int) -> int:
     if num > 0x7FFF:
         num -= 0x10000
     return num
@@ -117,39 +118,39 @@ def _to_signed(num):
 
 class INA226:
     """Driver for the INA226 current sensor"""
-    def __init__(self, i2c_device, addr=0x40):
-        self.i2c_device = i2c_device
+    def __init__(self, i2c_device: machine.I2C|machine.SoftI2C, addr: int = 0x40) -> None:
+        self.i2c_device: machine.I2C|machine.SoftI2C = i2c_device
 
-        self.i2c_addr = addr
-        self.buf = bytearray(2)
+        self.i2c_addr: int = addr
+        self.buf: bytearray = bytearray(2)
         # Multiplier in mA used to determine current from raw reading
-        self._current_lsb = 0
+        self._current_lsb: float = 0
         # Multiplier in W used to determine power from raw reading
-        self._power_lsb = 0
+        self._power_lsb: float = 0
 
         # Set chip to known config values to start
         self._cal_value = 4096
         self.set_calibration()
 
-    def _write_register(self, reg, value):
+    def _write_register(self, reg: int, value: int) -> None:
         self.buf[0] = (value >> 8) & 0xFF
         self.buf[1] = value & 0xFF
         self.i2c_device.writeto_mem(self.i2c_addr, reg, self.buf)
 
-    def _read_register(self, reg):
+    def _read_register(self, reg: int) -> int:
         self.i2c_device.readfrom_mem_into(self.i2c_addr, reg & 0xff, self.buf)
         value = (self.buf[0] << 8) | (self.buf[1])
         return value
 
     @property
-    def shunt_voltage(self):
+    def shunt_voltage(self) -> float:
         """The shunt voltage (between V+ and V-) in Volts (so +-.327V)"""
         value = _to_signed(self._read_register(_REG_SHUNTVOLTAGE))
         # The least signficant bit is 10uV which is 0.00001 volts
         return value * 0.00001
 
     @property
-    def bus_voltage(self):
+    def bus_voltage(self) -> float:
         """The bus voltage (between V- and GND) in Volts"""
         raw_voltage = self._read_register(_REG_BUSVOLTAGE)
         # voltage in millVolt is register content multiplied with 1.25mV/bit
@@ -158,7 +159,7 @@ class INA226:
         return voltage_mv * 0.001
 
     @property
-    def current(self):
+    def current(self) -> float:
         """The current through the shunt resistor in milliamps."""
         # Sometimes a sharp load will reset the INA219, which will
         # reset the cal register, meaning CURRENT and POWER will
@@ -171,7 +172,7 @@ class INA226:
         return raw_current * self._current_lsb
     
     @property
-    def power(self):
+    def power(self) -> float:
         # INA226 stores the calculated power in this register        
         raw_power = _to_signed(self._read_register(_REG_POWER))
         # Calculated power is derived by multiplying raw power value with the power LSB
@@ -199,7 +200,7 @@ class INA226:
 # cal_value = 512
 #
 #
-    def set_calibration(self):  # pylint: disable=invalid-name
+    def set_calibration(self) -> None:  # pylint: disable=invalid-name
         """Configures to INA226 to be able to measure up to 36V and 2A
             of current. Counter overflow occurs at 3.2A.
            ..note :: These calculations assume a 0.1 shunt ohm resistor"""
@@ -221,7 +222,7 @@ class INA226:
     # 0,0001
     # 0,0025
     # 512
-    def set_calibration_custom(self, calValue=512, config=0x4127):
+    def set_calibration_custom(self, calValue: int = 512, config: int = 0x4127) -> None:
     # Set the configuration register externally by using the hex value for the config register
     # Value can be calculated with spreadsheet
     # Calibration value needs to be calculated seperately and passed as parameter too

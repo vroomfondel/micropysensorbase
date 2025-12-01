@@ -16,21 +16,21 @@ from math import trunc
 # from smbus2 import SMBus
 from usmbus import SMBus
 
-def to_bytes(register_value):
+
+def to_bytes(register_value: int) -> list[int]:
     return [(register_value >> 8) & 0xFF, register_value & 0xFF]
 
 
-def binary_as_string(register_value):
+def binary_as_string(register_value: int) -> str:
     r = bin(register_value)[2:]
     logging.get_logger(__name__).debug(f"{type(r)=} {r=}")
-    return f'{r:010s}'  #'{0:010d}'.format(r)  # r.format("0d16")  #.zfill(16)
+    return f'{r:010s}'  # '{0:010d}'.format(r)  # r.format("0d16")  #.zfill(16)
 
 
-def max_expected_amps_to_string(max_expected_amps):
+def max_expected_amps_to_string(max_expected_amps: float | None) -> str:
     if max_expected_amps is None:
         return ""
-    else:
-        return ", max expected amps: %.3fA" % max_expected_amps
+    return str(", max expected amps: %.3fA" % max_expected_amps)
 
 
 class INA226:
@@ -130,11 +130,11 @@ class INA226:
 
     def __init__(
         self,
-        smbus,
-        address=0x40,
-        max_expected_amps=None,
-        shunt_ohms=0.002,
-        log_level=logging.ERROR,
+        smbus: SMBus,
+        address: int=0x40,
+        max_expected_amps: float|None=None,
+        shunt_ohms: float=0.002,
+        log_level: int=logging.ERROR,
     ):
         """Construct the class.
 
@@ -165,8 +165,8 @@ class INA226:
 
 
     def configure(
-        self, avg_mode=AVG_1BIT, bus_ct=VCT_8244us_BIT, shunt_ct=VCT_8244us_BIT
-    ):
+        self, avg_mode: int=AVG_1BIT, bus_ct: int=VCT_8244us_BIT, shunt_ct: int=VCT_8244us_BIT
+    ) -> None:
         """Configure and calibrate how the INA226 will take measurements."""
 
         self.logger.debug(
@@ -192,13 +192,13 @@ class INA226:
         self._configuration_register(configuration)
 
 
-    def voltage(self):
+    def voltage(self) -> float:
         """Return the bus voltage in volts."""
         value = self._voltage_register()
         return float(value) * self.__BUS_MILLIVOLTS_LSB / 1000
 
 
-    def supply_voltage(self):
+    def supply_voltage(self) -> float:
         """Return the bus supply voltage in volts.
 
         This is the sum of the bus voltage and shunt voltage. A
@@ -207,7 +207,7 @@ class INA226:
         return self.voltage() + (float(self.shunt_voltage()) / 1000)
 
 
-    def current(self):
+    def current(self) -> float:
         """Return the bus current in milliamps.
 
         A DeviceRangeError exception is thrown if current overflow occurs.
@@ -216,7 +216,7 @@ class INA226:
         return self._current_register() * self._current_lsb * 1000
 
 
-    def power(self):
+    def power(self) -> float:
         """Return the bus power consumption in milliwatts.
 
         A DeviceRangeError exception is thrown if current overflow occurs.
@@ -225,7 +225,7 @@ class INA226:
         return self._power_register() * self._power_lsb * 1000
 
 
-    def shunt_voltage(self):
+    def shunt_voltage(self) -> float:
         """Return the shunt voltage in millivolts.
 
         A DeviceRangeError exception is thrown if current overflow occurs.
@@ -234,19 +234,19 @@ class INA226:
         return self._shunt_voltage_register() * self.__SHUNT_MILLIVOLTS_LSB
 
 
-    def sleep(self):
+    def sleep(self) -> None:
         """Put the INA226 into power down mode."""
         configuration = self._read_configuration()
         self._configuration_register(configuration & 0xFFF8)
 
 
-    def wake(self, mode=__CONT_SH_BUS):
+    def wake(self, mode: int=__CONT_SH_BUS) -> None:
         """Wake the INA226 from power down mode."""
         configuration = self._read_configuration()
         self._configuration_register(configuration & 0xFFF8 | mode)
 
 
-    def current_overflow(self):
+    def current_overflow(self) -> int:
         """Return true if the sensor has detect current overflow.
 
         In this case the current and power values are invalid.
@@ -254,7 +254,7 @@ class INA226:
         return self._has_current_overflow()
 
 
-    def reset(self):
+    def reset(self) -> None:
         """Reset the INA226 to its default configuration."""
         self._configuration_register(1 << self.__RST)
         self.logger.info(
@@ -282,7 +282,7 @@ class INA226:
         )
 
 
-    def set_low_battery(self, low_limit=3, high_level_trigger=True):
+    def set_low_battery(self, low_limit: int=3, high_level_trigger: bool=True) -> None:
         # trunc actually return an int which is (bit)shiftable
         self._limit_register(trunc(low_limit * 1000 / self.__BUS_MILLIVOLTS_LSB))  # type: ignore
 
@@ -292,7 +292,7 @@ class INA226:
             self._mask_register(1 << 12 | 1)
 
 
-    def _calibrate(self, bus_volts_max, shunt_volts_max, max_expected_amps=None):
+    def _calibrate(self, bus_volts_max: float, shunt_volts_max: float, max_expected_amps: float|None=None) -> None:
         self.logger.info(
             self.__LOG_MSG_2
             % (
@@ -327,7 +327,7 @@ class INA226:
         self.logger.info("calibration: 0x%04x (%d)" % (calibration, calibration))
         self._calibration_register(calibration)
 
-    def _determine_current_lsb(self, max_expected_amps, max_possible_amps):
+    def _determine_current_lsb(self, max_expected_amps: float|None, max_possible_amps: float) -> float:
         if max_expected_amps is not None:
             if max_expected_amps > round(max_possible_amps, 3):
                 raise ValueError(
@@ -350,72 +350,72 @@ class INA226:
             )
         return current_lsb
 
-    def _calculate_min_current_lsb(self):
+    def _calculate_min_current_lsb(self) -> float:
         return self.__CALIBRATION_FACTOR / (
             self._shunt_ohms * self.__MAX_CALIBRATION_VALUE
         )
 
-    def _has_current_overflow(self):
+    def _has_current_overflow(self) -> bool:
         ovf = self._read_mask_register() >> self.__OVF & 1
-        return ovf
+        return bool(ovf)
 
-    def is_conversion_ready(self):
+    def is_conversion_ready(self) -> int:
         """Check if conversion of a new reading has occured."""
         cnvr = self._read_mask_register() >> self.__CVRF & 1
         return cnvr
 
-    def is_low_battery(self):
+    def is_low_battery(self) -> int:
         bul = self._read_mask_register() >> self.__BUL & 1
         return bul
 
-    def _handle_current_overflow(self):
+    def _handle_current_overflow(self) -> None:
         if self._has_current_overflow():
             raise DeviceRangeError(self.__GAIN_VOLTS)
 
-    def _configuration_register(self, register_value):
+    def _configuration_register(self, register_value: int) -> None:
         self.logger.debug("configuration: 0x%04x" % register_value)
         self.__write_register(self.__REG_CONFIG, register_value)
 
-    def _read_configuration(self):
+    def _read_configuration(self) -> int:
         return self.__read_register(self.__REG_CONFIG)
 
-    def _voltage_register(self):
+    def _voltage_register(self) -> int:
         return self.__read_register(self.__REG_BUSVOLTAGE)
 
-    def _current_register(self):
+    def _current_register(self)-> int:
         return self.__read_register(self.__REG_CURRENT, True)
 
-    def _shunt_voltage_register(self):
+    def _shunt_voltage_register(self) -> int:
         return self.__read_register(self.__REG_SHUNTVOLTAGE, True)
 
-    def _power_register(self):
+    def _power_register(self) -> int:
         return self.__read_register(self.__REG_POWER)
 
-    def _calibration_register(self, register_value):
+    def _calibration_register(self, register_value: int) -> None:
         self.logger.debug("calibration: 0x%04x" % register_value)
         self.__write_register(self.__REG_CALI, register_value)
 
-    def _read_mask_register(self):
+    def _read_mask_register(self) -> int:
         return self.__read_register(self.__REG_MASK)
 
-    def _mask_register(self, register_value):
+    def _mask_register(self, register_value: int) -> None:
         self.logger.debug("mask/enable: 0x%04x" % register_value)
         self.__write_register(self.__REG_MASK, register_value)
 
-    def _read_limit_register(self):
+    def _read_limit_register(self) -> int:
         return self.__read_register(self.__REG_LIMIT)
 
-    def _limit_register(self, register_value):
+    def _limit_register(self, register_value: int) -> None:
         self.logger.debug("limit value: 0x%04x" % register_value)
         self.__write_register(self.__REG_LIMIT, register_value)
 
-    def _manufacture_id(self):
+    def _manufacture_id(self) -> int:
         return self.__read_register(self.__REG_MANUFACTURER_ID)
 
-    def _die_id(self):
+    def _die_id(self) -> int:
         return self.__read_register(self.__REG_DIE_ID)
 
-    def __write_register(self, register, register_value):
+    def __write_register(self, register: int, register_value: int) -> None:
         register_bytes = to_bytes(register_value)
         self.logger.debug(
             "write register 0x%02x: 0x%04x 0b%s"
@@ -424,7 +424,7 @@ class INA226:
         self._i2c.write_i2c_block_data(self._address, register, register_bytes)
         # self._i2c.write_word_data(self._address, register, register_value)
 
-    def __read_register(self, register, negative_value_supported=False):
+    def __read_register(self, register: int, negative_value_supported: bool=False) -> int:
         result: int = self._i2c.read_word_data(self._address, register) & 0xFFFF
         register_value = ((result << 8) & 0xFF00) + (result >> 8)
         if negative_value_supported:
@@ -442,7 +442,7 @@ class DeviceRangeError(Exception):
 
     __DEV_RNG_ERR = "Current out of range (overflow), " "for gain %.2fV"
 
-    def __init__(self, gain_volts, device_max=False):
+    def __init__(self, gain_volts: float, device_max: bool=False):
         """Construct a DeviceRangeError."""
         msg = self.__DEV_RNG_ERR % gain_volts
         if device_max:

@@ -31,7 +31,7 @@ class SMBus():  # machine.I2C):
 
     __LOG_FORMAT = f"%(asctime)s - %(levelname)s -  %(name)-12s - %(message)s"
 
-    def __init__(self, id, scl: machine.Pin, sda: machine.Pin, freq=400_000, log_level=logging.ERROR):
+    def __init__(self, id: int, scl: machine.Pin, sda: machine.Pin, freq: int=400_000, log_level: int=logging.ERROR):
         self.i2c = machine.I2C(id, scl=scl, sda=sda, freq=freq)
 
         self.scl = scl
@@ -43,33 +43,33 @@ class SMBus():  # machine.I2C):
             # parent module.
             logging.basic_config(level=log_level, format=self.__LOG_FORMAT)
 
-        self.logger = logging.get_logger(__name__)
+        self.logger: logging.Logger = logging.get_logger(__name__)
         self.logger.setLevel(log_level)
 
         #(0, scl=machine.Pin(22), sda = machine.Pin(21), freq = 400_000)
 
-    def scan(self):
+    def scan(self) -> list:
         return self.i2c.scan()
 
-    def read_byte_data(self, addr, register):
+    def read_byte_data(self, addr: int, register: int) -> int:
         """ Read a single byte from register of device at addr
             Returns a single byte """
 
-        self.logger(f"read_byte_data {addr=} {register=}")
+        self.logger.debug(f"read_byte_data {addr=} {register=}")
 
         return self.i2c.readfrom_mem(addr, register, 1)[0]
 
 
-    def read_i2c_block_data(self, addr, register, length):
+    def read_i2c_block_data(self, addr: int, register: int, length: int) -> bytes:
         """ Read a block of length from register of device at addr
             Returns a bytes object filled with whatever was read """
 
-        self.logger(f"read_i2c_block_data {addr=} {register=} {length=}")
+        self.logger.debug(f"read_i2c_block_data {addr=} {register=} {length=}")
 
         return self.i2c.readfrom_mem(addr, register, length)
 
 
-    def write_byte_data(self, addr, register, data):
+    def write_byte_data(self, addr: int, register: int, data: int|bytes) -> None:
         """ Write a single byte from buffer `data` to register of device at addr
             Returns None """
 
@@ -80,7 +80,7 @@ class SMBus():  # machine.I2C):
         return self.i2c.writeto_mem(addr, register, data)
 
 
-    def write_i2c_block_data(self, addr, register, data):
+    def write_i2c_block_data(self, addr: int, register: int, data: bytes|list[int]) -> None:
         """ Write multiple bytes of data to register of device at addr
             Returns None """
 
@@ -94,18 +94,18 @@ class SMBus():  # machine.I2C):
 
 
     # The following haven't been implemented, but could be.
-    def read_byte(self, *args, **kwargs):
+    def read_byte(self, *args: list[object]|None, **kwargs: dict[str, object]|None) -> int:
         """ Not yet implemented """
 
         raise RuntimeError("Not yet implemented")
 
 
-    def write_byte(self, *args, **kwargs):
+    def write_byte(self, *args: list[object]|None, **kwargs: dict[str, object]|None) -> None:
         """ Not yet implemented """
         raise RuntimeError("Not yet implemented")
 
 
-    def read_word_data(self, addr, register) -> int:
+    def read_word_data(self, addr: int, register: int) -> int:
         """ Not yet implemented """
         # DEBUG:root:read_word_data args=(64, 2) kwargs={}
 
@@ -115,6 +115,6 @@ class SMBus():  # machine.I2C):
         return int.from_bytes(bs, 'little')
 
 
-    def write_word_data(self, *args, **kwargs):
+    def write_word_data(self, *args: list[object]|None, **kwargs: dict[str, object]|None) -> None:
         """ Not yet implemented """
         raise RuntimeError("Not yet implemented")
