@@ -72,8 +72,10 @@
 # display.show()
 
 from micropython import const
-import utime as time
+import time
 import framebuf
+
+import machine
 
 
 # a few register definitions
@@ -88,17 +90,18 @@ _SET_PAGE_ADDRESS    = const(0xB0)
 
 
 class SH1106(framebuf.FrameBuffer):
-
-    def __init__(self, width, height, external_vcc, rotate=0):
-        self.width = width
-        self.height = height
-        self.external_vcc = external_vcc
-        self.flip_en = rotate == 180 or rotate == 270
-        self.rotate90 = rotate == 90 or rotate == 270
-        self.pages = self.height // 8
-        self.bufsize = self.pages * self.width
-        self.renderbuf = bytearray(self.bufsize)
-        self.pages_to_update = 0
+    def __init__(self, width: int, height: int, external_vcc: bool, rotate: int=0):
+        self.width: int = width
+        self.height: int = height
+        self.external_vcc: bool = external_vcc
+        self.flip_en: bool = rotate == 180 or rotate == 270
+        self.rotate90: bool = rotate == 90 or rotate == 270
+        self.pages: int = self.height // 8
+        self.bufsize: int = self.pages * self.width
+        self.renderbuf: bytearray = bytearray(self.bufsize)
+        self.pages_to_update: int = 0
+        self.res: machine.Pin|None = None
+        self.delay: float|None = None
 
         if self.rotate90:
             self.displaybuf = bytearray(self.bufsize)
@@ -116,23 +119,23 @@ class SH1106(framebuf.FrameBuffer):
         self.rotate = self.flip
         self.init_display()
 
-    def init_display(self):
-        self.reset()
+    def init_display(self) -> None:
+        self.reset(self.res)
         self.fill(0)
         self.show()
         self.poweron()
         # rotate90 requires a call to flip() for setting up.
         self.flip(self.flip_en)
 
-    def poweroff(self):
+    def poweroff(self) -> None:
         self.write_cmd(_SET_DISP | 0x00)
 
-    def poweron(self):
+    def poweron(self) -> None:
         self.write_cmd(_SET_DISP | 0x01)
         if self.delay:
-            time.sleep_ms(self.delay)
+            time.sleep_ms(self.delay)  # type: ignore[attr-defined]
 
-    def flip(self, flag=None, update=True):
+    def flip(self, flag: bool|None=None, update: bool=True) -> None:
         if flag is None:
             flag = not self.flip_en
         mir_v = flag ^ self.rotate90
@@ -143,17 +146,17 @@ class SH1106(framebuf.FrameBuffer):
         if update:
             self.show(True) # full update
 
-    def sleep(self, value):
+    def sleep(self, value: bool) -> None:
         self.write_cmd(_SET_DISP | (not value))
 
-    def contrast(self, contrast):
+    def contrast(self, contrast: int) -> None:
         self.write_cmd(_SET_CONTRAST)
         self.write_cmd(contrast)
 
-    def invert(self, invert):
+    def invert(self, invert: bool) -> None:
         self.write_cmd(_SET_NORM_INV | (invert & 1))
 
-    def show(self, full_update = False):
+    def show(self, full_update: bool = False) -> None:
         # self.* lookups in loops take significant time (~4fps).
         (w, p, db, rb) = (self.width, self.pages,
                           self.displaybuf, self.renderbuf)
@@ -173,52 +176,53 @@ class SH1106(framebuf.FrameBuffer):
                 self.write_data(db[(w*page):(w*page+w)])
         self.pages_to_update = 0
 
-    def pixel(self, x, y, color=None):
+    def pixel(self, x: int, y: int, color: int|None=None) -> int:
         if color is None:
             return super().pixel(x, y)
-        else:
-            super().pixel(x, y , color)
-            page = y // 8
-            self.pages_to_update |= 1 << page
 
-    def text(self, text, x, y, color=1):
+        ret: int = super().pixel(x, y , color)  # type: ignore
+        page = y // 8
+        self.pages_to_update |= 1 << page
+        return ret
+
+    def text(self, text: str, x: int, y: int, color: int=1) -> None:
         super().text(text, x, y, color)
         self.register_updates(y, y+7)
 
-    def line(self, x0, y0, x1, y1, color):
+    def line(self, x0: int, y0: int, x1: int, y1: int, color: int) -> None:
         super().line(x0, y0, x1, y1, color)
         self.register_updates(y0, y1)
 
-    def hline(self, x, y, w, color):
+    def hline(self, x: int, y: int, w: int, color: int) -> None:
         super().hline(x, y, w, color)
         self.register_updates(y)
 
-    def vline(self, x, y, h, color):
+    def vline(self, x: int, y: int, h: int, color: int) -> None:
         super().vline(x, y, h, color)
         self.register_updates(y, y+h-1)
 
-    def fill(self, color):
+    def fill(self, color: int) -> None:
         super().fill(color)
         self.pages_to_update = (1 << self.pages) - 1
 
-    def blit(self, fbuf, x, y, key=-1, palette=None):
+    def blit(self, fbuf: framebuf.FrameBuffer, x: int, y: int, key: int=-1, palette: bytes|None=None) -> None:
         super().blit(fbuf, x, y, key, palette)
         self.register_updates(y, y+self.height)
 
-    def scroll(self, x, y):
+    def scroll(self, x: int, y: int) -> None:
         # my understanding is that scroll() does a full screen change
         super().scroll(x, y)
         self.pages_to_update =  (1 << self.pages) - 1
 
-    def fill_rect(self, x, y, w, h, color):
+    def fill_rect(self, x: int, y: int, w: int, h: int, color: int) -> None:
         super().fill_rect(x, y, w, h, color)
         self.register_updates(y, y+h-1)
 
-    def rect(self, x, y, w, h, color):
+    def rect(self, x: int, y: int, w: int, h: int, color: int) -> None:
         super().rect(x, y, w, h, color)
         self.register_updates(y, y+h-1)
 
-    def register_updates(self, y0, y1=None):
+    def register_updates(self, y0: int, y1: int|None=None) -> None:
         # this function takes the top and optional bottom address of the changes made
         # and updates the pages_to_change list with any changed pages
         # that are not yet on the list
@@ -230,19 +234,33 @@ class SH1106(framebuf.FrameBuffer):
         for page in range(start_page, end_page+1):
             self.pages_to_update |= 1 << page
 
-    def reset(self, res):
+    def reset(self, res: machine.Pin|None) -> None:
         if res is not None:
             res(1)
-            time.sleep_ms(1)
+            time.sleep_ms(1)  # type: ignore[attr-defined]
             res(0)
-            time.sleep_ms(20)
+            time.sleep_ms(20)  # type: ignore[attr-defined]
             res(1)
-            time.sleep_ms(20)
+            time.sleep_ms(20)  # type: ignore[attr-defined]
+
+
+    def write_cmd(self, cmd: int) -> None:
+        raise NotImplementedError("Subclasses must implement write_cmd()")
+
+    def write_data(self, buf: bytearray) -> None:
+        raise NotImplementedError("Subclasses must implement write_data()")
 
 
 class SH1106_I2C(SH1106):
-    def __init__(self, width, height, i2c, res=None, addr=0x3c,
-                 rotate=0, external_vcc=False, delay=0):
+    def __init__(self,
+                 width: int,
+                 height: int,
+                 i2c: machine.SoftI2C|machine.I2C,
+                 res: machine.Pin|None,
+                 addr: int=0x3c,
+                 rotate: int=0,
+                 external_vcc: bool=False,
+                 delay: float=0):
         self.i2c = i2c
         self.addr = addr
         self.res = res
@@ -252,21 +270,29 @@ class SH1106_I2C(SH1106):
             res.init(res.OUT, value=1)
         super().__init__(width, height, external_vcc, rotate)
 
-    def write_cmd(self, cmd):
+    def write_cmd(self, cmd: int) -> None:
         self.temp[0] = 0x80  # Co=1, D/C#=0
         self.temp[1] = cmd
         self.i2c.writeto(self.addr, self.temp)
 
-    def write_data(self, buf):
+    def write_data(self, buf: bytearray) -> None:
         self.i2c.writeto(self.addr, b'\x40'+buf)
 
-    def reset(self):
+    def reset(self, _: machine.Pin|None=None) -> None:
         super().reset(self.res)
 
 
 class SH1106_SPI(SH1106):
-    def __init__(self, width, height, spi, dc, res=None, cs=None,
-                 rotate=0, external_vcc=False, delay=0):
+    def __init__(self,
+                 width: int,
+                 height: int,
+                 spi: machine.SoftSPI|machine.SPI,
+                 dc: machine.Pin,
+                 res: machine.Pin|None=None,
+                 cs: machine.Pin|None=None,
+                 rotate: int=0,
+                 external_vcc: bool=False,
+                 delay: float=0):
         dc.init(dc.OUT, value=0)
         if res is not None:
             res.init(res.OUT, value=0)
@@ -279,7 +305,7 @@ class SH1106_SPI(SH1106):
         self.delay = delay
         super().__init__(width, height, external_vcc, rotate)
 
-    def write_cmd(self, cmd):
+    def write_cmd(self, cmd: int) -> None:
         if self.cs is not None:
             self.cs(1)
             self.dc(0)
@@ -290,7 +316,7 @@ class SH1106_SPI(SH1106):
             self.dc(0)
             self.spi.write(bytearray([cmd]))
 
-    def write_data(self, buf):
+    def write_data(self, buf: bytearray) -> None:
         if self.cs is not None:
             self.cs(1)
             self.dc(1)
@@ -301,5 +327,5 @@ class SH1106_SPI(SH1106):
             self.dc(1)
             self.spi.write(buf)
 
-    def reset(self):
+    def reset(self, _: machine.Pin|None=None) -> None:
         super().reset(self.res)
