@@ -1,69 +1,82 @@
-import micropython
+import config
+import wifi
+
 import time
 import machine
 import sys
 import io
 
-#### monkeypatching galore!!! ####
+import logging
+logger = logging.get_logger(__name__)
+logger.setLevel(logging.INFO)
+
+if __name__ in config.get_config_data_dict(config.data, "loglevel"):
+    melv: int|None = logging.get_log_level_by_name(config.get_config_data_str(config.get_config_data_dict(config.data, "loglevel"), "mqttwrap"))
+    if melv is not None:
+        logger.setLevel(melv)
+
+from umqtt.simple import MQTTClient as MQTTClientSimple
+# from umqtt.robust import MQTTClient as MQTTClientRobust
+
 #### needed for retain-bit ####
+# from umqtt.simple import MQTTException
 # taken from https://github.com/micropython/micropython-lib/blob/master/micropython/umqtt.simple/umqtt/simple.py
 # and adapted
-from umqtt.simple import MQTTClient as MQTTClientSimple
+# import socket
+# import struct
+# from binascii import hexlify
+# class MQTTClientSimple(umqtt.simple.MQTTClient):
+#     # Wait for a single incoming MQTT message and process it.
+#     # Subscribed messages are delivered to a callback previously
+#     # set by .set_callback() method. Other (internal) MQTT
+#     # messages processed internally.
+#     def wait_msg(self):
+#         res = self.sock.read(1)
+#         self.sock.setblocking(True)
+#         if res is None:
+#             return None
+#         if res == b"":
+#             raise OSError(-1)
+#         if res == b"\xd0":  # PINGRESP
+#             sz = self.sock.read(1)[0]
+#             assert sz == 0
+#             return None
+#         op = res[0]
+#         if op & 0xF0 != 0x30:
+#             return op
+#         sz = self._recv_len()
+#         topic_len = self.sock.read(2)
+#         topic_len = (topic_len[0] << 8) | topic_len[1]
+#         topic = self.sock.read(topic_len)
+#         sz -= topic_len + 2
+#         if op & 6:
+#             pid = self.sock.read(2)
+#             pid = pid[0] << 8 | pid[1]
+#             sz -= 2
+#
+#         msg = self.sock.read(sz)
+#
+#         # do not ignore retained
+#         retained = op & 0x01
+#
+#         if self.cb is not None:
+#             self.cb(topic, msg, retained == 1)
+#
+#         if op & 6 == 2:
+#             pkt = bytearray(b"\x40\x02\0\0")
+#             struct.pack_into("!H", pkt, 2, pid)
+#             self.sock.write(pkt)
+#         elif op & 6 == 4:
+#             assert 0
+#         return op
 
 
-def wait_msg(self: MQTTClientSimple) -> None|int:
-    assert self.sock is not None
-
-    res = self.sock.read(1)
-    self.sock.setblocking(True)
-    if res is None:
-        return None
-    if res == b"":
-        raise OSError(-1)
-    if res == b"\xd0":  # PINGRESP
-        sz = self.sock.read(1)[0]
-        assert sz == 0
-        return None
-    op = res[0]
-    if op & 0xF0 != 0x30:
-        return op
-    sz = self._recv_len()
-    topic_len = self.sock.read(2)
-    topic_len = (topic_len[0] << 8) | topic_len[1]
-    topic = self.sock.read(topic_len)
-    sz -= topic_len + 2
-    if op & 6:
-        pid = self.sock.read(2)
-        pid = pid[0] << 8 | pid[1]
-        sz -= 2
-    msg = self.sock.read(sz)
-
-    # do not ignore retained
-    retained = op & 0x01
-
-    assert self.cb is not None
-    self.cb(topic, msg, retained == 1)
-    if op & 6 == 2:
-        pkt = bytearray(b"\x40\x02\0\0")
-        struct.pack_into("!H", pkt, 2, pid)  # type: ignore
-        self.sock.write(pkt)
-    elif op & 6 == 4:
-        assert 0
-    return op
-
-
-MQTTClientSimple.wait_msg = wait_msg  # type: ignore
-#### /monkeypatching galore!!! ####
-
-# from umqtt.robust import MQTTClient
-from umqtt.simple import MQTTClient
-
-import config
-import wifi
 
 import _thread
 
-lock = _thread.allocate_lock()
+lock: _thread.LockType | config.DummyLock = config.DummyLock(name="mqttwrap", loglevel=logging.INFO)
+if config.ENABLE_LOCK:
+    lock = _thread.allocate_lock()
 
 TELE_PERIOD: int = 60
 
@@ -72,17 +85,13 @@ last_status_gmt: float | None = None
 import json
 import socket
 
-import logging
-
-logger = logging.get_logger(__name__)
-logger.setLevel(logging.INFO)
 
 boottime_gmt: float = time.mktime(time.gmtime())  # type: ignore[attr-defined]
 boottime_local_str = time.getisotime(boottime_gmt)
 
 _lastping: int = time.time()  # type: ignore[attr-defined]
 
-_mqttclient: MQTTClient | None = None
+_mqttclient: MQTTClientSimple | None = None
 _keepalive: int = 60
 _controlfeed: str | None = None
 _received_commands: list[tuple[int, str, str | None]] = []
@@ -119,8 +128,11 @@ def pop_cmd_received() -> tuple[int, str, str | None] | None:
     return None
 
 
-def sub_cb(_topic: bytes, _msg: bytes, retained: bool) -> None:
+def sub_cb(_topic: bytes, _msg: bytes, retained: bool|None = None) -> None:
     global _lastping
+
+    logger.debug(f"mqttwrap::sub_cb:called {_topic=} {_msg=} {retained=}")
+
     _lastping = time.time()  # type: ignore
 
     msg: str = _msg.decode("utf-8")
@@ -149,21 +161,27 @@ def get_ip(host: str, port: int = 80) -> str:
     return addr_info[0][-1][0]  # type: ignore
 
 
-def ensure_mqtt_connect(watchdog: machine.WDT|None = None) -> None:
+def ensure_mqtt_connect(watchdog: machine.WDT|None = None, timeout_s: float|None=None) -> None:
     global _mqttclient, _keepalive, _controlfeed, _lastping, lock
+
+    logger.debug(f"mqttwrap.py::ensure_mqtt_connect::called {watchdog=} {timeout_s=}")
 
     if watchdog:
         watchdog.feed()
 
+    logger.debug("mqttwrap.py::ensure_mqtt_connect::before trying to get lock...")
     with lock:
+        logger.debug("mqttwrap.py::ensure_mqtt_connect::AFTER trying to get lock...")
+
         if watchdog:
             watchdog.feed()
 
         if _mqttclient is None:
-            _mqttclient = MQTTClient(
+            _mqttclient = MQTTClientSimple(
                 client_id=get_client_id(),
                 server=config.data["mosquitto"]["MOSQUITTO_HOST"],  # type: ignore
                 port=config.data["mosquitto"]["MOSQUITTO_PORT"],  # type: ignore
+                ssl=None,
                 keepalive=_keepalive,
                 password=config.data["mosquitto"]["MOSQUITTO_PASSWORD"],  # type: ignore
                 user=config.data["mosquitto"]["MOSQUITTO_USERNAME"],  # type: ignore
@@ -173,13 +191,27 @@ def ensure_mqtt_connect(watchdog: machine.WDT|None = None) -> None:
 
             _mqttclient.set_callback(sub_cb)
 
+            lwtfeed: str = format_with_clientid(config.data["mosquitto"]["lwtfeed"])
+
+            logger.debug(f"mqttwrap.py::ensure_mqtt_connect::lwt_feed: {lwtfeed}")
             _mqttclient.set_last_will(
-                format_with_clientid(config.data["mosquitto"]["lwtfeed"]),  # type: ignore
-                "OFFLINE",
-                qos=1,
+                topic=lwtfeed,  # type: ignore
+                msg="OFFLINE",
+                qos=0,
                 retain=True,
             )
-            _mqttclient.connect(clean_session=True)
+
+            logger.debug("mqttwrap.py::ensure_mqtt_connect::before call to .connect()")
+
+
+            logger.debug(f"mqttwrap.py::ensure_mqtt_connect::before trying to connect to {_mqttclient.server=}:{_mqttclient.port=}")
+
+            addr = socket.getaddrinfo(_mqttclient.server, _mqttclient.port, 0, socket.SOCK_STREAM)[0][-1]
+            logger.debug(f"mqttwrap.py::ensure_mqtt_connect::before trying to connect to {addr=}")
+
+            logger.debug(f"mqttwrap.py::ensure_mqtt_connect::before trying to connect with {_mqttclient.user=} {_mqttclient.pswd=}")
+            _mqttclient.connect(clean_session=True, timeout=timeout_s)
+            logger.debug("mqttwrap.py::ensure_mqtt_connect::after call to .connect()")
 
             if watchdog:
                 watchdog.feed()
@@ -187,7 +219,7 @@ def ensure_mqtt_connect(watchdog: machine.WDT|None = None) -> None:
             _mqttclient.publish(
                 format_with_clientid(config.data["mosquitto"]["lwtfeed"]),  # type: ignore
                 "ONLINE",
-                qos=1,
+                qos=0,
                 retain=True,
             )
 
@@ -198,15 +230,17 @@ def ensure_mqtt_connect(watchdog: machine.WDT|None = None) -> None:
 
     if watchdog:
         watchdog.feed()
+
     # acquires its own lock...
-    ping(reset_if_mqtt_fails=False)
+    # ping(reset_if_mqtt_fails=False)
+
     if watchdog:
         watchdog.feed()
 
 
-def ensure_mqtt_catch_reset(reset_if_mqtt_fails: bool = True, watchdog: machine.WDT|None = None) -> None:
+def ensure_mqtt_catch_reset(reset_if_mqtt_fails: bool = True, watchdog: machine.WDT|None = None, mqtt_connect_timeout_s: float|None = None) -> None:
     try:
-        ensure_mqtt_connect(watchdog=watchdog)
+        ensure_mqtt_connect(watchdog=watchdog, timeout_s=mqtt_connect_timeout_s)
     except Exception as ex:
         _timestring = time.getisotimenow()
 
@@ -245,10 +279,10 @@ def publish_one(topic: str, msg: str, qos: int = 1, retain: bool = True, reset_i
         if watchdog:
             watchdog.feed()
 
-        assert _mqttclient is not None
+        # assert _mqttclient is not None
         if reset_if_mqtt_fails:
             try:
-                _mqttclient.publish(topic=topic, msg=msg, retain=retain, qos=qos)
+                _mqttclient.publish(topic=topic, msg=msg, retain=retain, qos=qos)  #type: ignore
             except Exception as iex:
                 _timestring = time.getisotimenow()
 
@@ -264,7 +298,7 @@ def publish_one(topic: str, msg: str, qos: int = 1, retain: bool = True, reset_i
                 time.sleep(30)  # type: ignore[attr-defined]
                 machine.reset()
         else:
-            _mqttclient.publish(topic=topic, msg=msg, retain=retain, qos=qos)
+            _mqttclient.publish(topic=topic, msg=msg, retain=retain, qos=qos)  #type: ignore
 
     logger.debug(f"published {topic=}")
     _lastping = time.time()  # type: ignore[attr-defined]
@@ -282,8 +316,8 @@ def check_msg(watchdog: machine.WDT|None = None) -> None:
         if watchdog:
             watchdog.feed()
 
-        assert _mqttclient is not None
-        _mqttclient.check_msg()
+        # assert _mqttclient is not None
+        _mqttclient.check_msg()  # type: ignore
 
     if watchdog:
         watchdog.feed()
@@ -292,16 +326,16 @@ def check_msg(watchdog: machine.WDT|None = None) -> None:
 def ping(reset_if_mqtt_fails: bool = True, watchdog: machine.WDT|None = None) -> None:
     global _lastping, lock, _mqttclient
     now: int = time.time()  # type: ignore[attr-defined]
-    logger.debug("=> PING")
-
+    logger.debug("mqttwrap::ping()::trying to get lock...")
     with lock:
+        logger.debug("mqttwrap::ping()::got lock...")
         if watchdog:
             watchdog.feed()
 
-        assert _mqttclient is not None
+        # assert _mqttclient is not None
         if reset_if_mqtt_fails:
             try:
-                _mqttclient.ping()
+                _mqttclient.ping()  # type: ignore
             except Exception as ex:
                 _timestring = time.getisotimenow()
 
@@ -318,7 +352,7 @@ def ping(reset_if_mqtt_fails: bool = True, watchdog: machine.WDT|None = None) ->
                 time.sleep(30)  # type: ignore[attr-defined]
                 machine.reset()
         else:
-            _mqttclient.ping()
+            _mqttclient.ping()  # type: ignore
 
         _lastping = now
 
@@ -416,7 +450,7 @@ def check_msgs(reset_if_mqtt_fails: bool = True, watchdog: machine.WDT|None = No
     if reset_if_mqtt_fails:
         try:
             check_msg(watchdog=watchdog)
-            ping_if_needed(threshhold=10, watchdog=watchdog)
+            ping_if_needed(threshhold=10, reset_if_mqtt_fails=True, watchdog=watchdog)
         except OSError as ex:
             if ex.errno == -1:
                 _out = io.StringIO()
@@ -434,7 +468,7 @@ def check_msgs(reset_if_mqtt_fails: bool = True, watchdog: machine.WDT|None = No
                 raise ex
     else:
         check_msg(watchdog=watchdog)
-        ping_if_needed(threshhold=10, watchdog=watchdog)
+        ping_if_needed(threshhold=10, reset_if_mqtt_fails=False, watchdog=watchdog)
 
 
 # def loop():
