@@ -1,31 +1,31 @@
 {
   "version": "0.42",
   "urls": [
-    ["boot.py", "/boot.py"],
-    ["main.py", "/main.py"],
-    ["time.py", "/time.py"],
+    ["boot.py", "boot.py"],
+    ["main.py", "main.py"],
+    ["time.py", "time.py"],
 
-    ["config.py", "/config.py"],
-    ["wifi.py", "/wifi.py"],
+    ["config.py", "config.py"],
+    ["wifi.py", "wifi.py"],
 
-    ["logging.py", "/logging.py"],
-    ["meminfo.py", "/meminfo.py"],
-    ["mqttwrap.py", "/mqttwrap.py"],
+    ["logging.py", "logging.py"],
+    ["meminfo.py", "meminfo.py"],
+    ["mqttwrap.py", "mqttwrap.py"],
 
-    ["boot_ssd.py", "/boot_ssd.py"],
-    ["usmbus.py", "/usmbus.py"],
-    ["ina226_raspi.py", "/ina226_raspi.py"],
+    ["boot_ssd.py", "boot_ssd.py"],
+    ["usmbus.py", "usmbus.py"],
+    ["ina226_raspi.py", "ina226_raspi.py"],
 
-    ["i2c_lcd.py", "/i2c_lcd.py"],
-    ["ina219.py", "/ina219.py"],
-    ["ina226.py", "/ina226.py"],
+    ["i2c_lcd.py", "i2c_lcd.py"],
+    ["ina219.py", "ina219.py"],
+    ["ina226.py", "ina226.py"],
 
-    ["measurements.py", "/measurements.py"],
+    ["measurements.py", "measurements.py"],
 
-    ["sh1106.py", "/sh1106.py"],
-    ["ssd1306.py", "/ssd1306.py"],
-    ["veml7700.py", "/veml7700.py"],
+    ["sh1106.py", "sh1106.py"],
+    ["ssd1306.py", "ssd1306.py"],
+    ["veml7700.py", "veml7700.py"],
 
-    ["esp32config.json", "/esp32config.json"]
+    ["esp32config.json", "esp32config.json"]
   ]
 }

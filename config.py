@@ -1,14 +1,33 @@
-
-import network
-
 import os
-import ubinascii
-import logging
-
+import sys
 import json
+
+import gc
+
+IS_MICROPYTHON: bool = sys.implementation.name == "micropython"
+
+mac: str = "UNDEFINED"
+
+if IS_MICROPYTHON:
+    import network
+    import ubinascii
+
+    mac = ubinascii.hexlify(network.WLAN(network.STA_IF).config('mac'), ':').decode()
+else:
+    import binascii as ubunascii
+
+mac_no_colon: str = mac.replace(':', '')
+
+import logging
+logging.basic_config(level=logging.DEBUG, format="%(asctime)s.%(msecs)03d - %(name)s - %(levelname)s - %(message)s")
 
 logger = logging.get_logger(__name__)
 logger.setLevel(logging.INFO)
+
+logger.info(f"DETECTED IMPLEMENTATION {sys.implementation.name=} => {IS_MICROPYTHON=}")
+INTVERSION = sys.implementation.version[0]*100 + sys.implementation.version[1]
+logger.info(f"DETECTED VERSION {sys.implementation.version=} => {INTVERSION}")
+
 
 # if __name__ in config.get_config_data_dict(config.data, "loglevel"):
 #     melv: int|None = logging.get_log_level_by_name(config.get_config_data_str(config.get_config_data_dict(config.data, "loglevel"), "config"))
@@ -25,17 +44,13 @@ REPLACE_CONFIG_WITH_LOCAL_CONFIG_IF_EXISTS: bool = False
 
 logger.debug(f"{UPDATE_CONFIG_WITH_LOCAL_CONFIG_IF_EXISTS=} {REPLACE_CONFIG_WITH_LOCAL_CONFIG_IF_EXISTS=}")
 
-import sys
-IS_MICROPYTHON: bool = sys.implementation.name == "micropython"
-logger.info(f"DETECTED IMPLEMENTATION {sys.implementation.name=} => {IS_MICROPYTHON=}")
-INTVERSION = sys.implementation.version[0]*100 + sys.implementation.version[1]
-logger.info(f"DETECTED VERSION {sys.implementation.version=} => {INTVERSION}")
+
 
 # data_orig: dict | None = None
 # ndata: dict | None = None
 
 data: dict[str, str|float|int|bool|dict[str, str|float|int|bool]] = {}
-# data_local: dict | None = None
+# data_local: dict[str, str|float|int|bool|dict[str, str|float|int|bool]] = {}
 
 class DummyLock:
     def __init__(self, name: str, loglevel: int = logging.INFO):
@@ -65,7 +80,8 @@ class DummyLock:
         return
 
 def _pprint_format(mydata: dict) -> str:
-    return json.dumps(mydata)
+    # item-sep, key-sep
+    return json.dumps(mydata, separators=(",\n", ": "))
 
 # https://forum.micropython.org/viewtopic.php?t=8112
 # © Dave Hylands
@@ -83,12 +99,27 @@ def file_exists(filename: str) -> bool:
     except OSError:
         return False
 
-def update_deep(base: dict, u: dict) -> dict:
-    for k, v in u.items():
-        if isinstance(v, dict):  # or isinstance(v, list):
-            base[k] = update_deep(base.get(k, {}), v)
+def update_deep(base: dict|list, u: dict|list) -> dict|list:
+    if isinstance(u, dict):
+        for k, v in u.items():
+            if isinstance(v, dict):
+                if isinstance(base, dict):
+                    base[k] = update_deep(base.get(k, {}), v)
+                else:
+                    raise Exception(f"unknown 1 {type(base)=} vs. {type(v)=}")
+            elif isinstance(v, list):
+                raise Exception(f"unknown 2 {type(base)=} vs. {type(v)=}")
+                # liste durchgehen?!
+                # base[k] = update_deep(base.get(k, {}), v)
+            elif isinstance(base, dict):
+                base[k] = v
+            else:
+                raise Exception(f"unknown 3 {type(base)=} vs. {type(v)=}")
+    elif isinstance(u, list):
+        if isinstance(u, list):
+            base = u
         else:
-            base[k] = v
+            raise Exception(f"unknown 4 {type(base)=} vs. {type(u)=}")
 
     return base
 
@@ -114,9 +145,10 @@ if file_exists("esp32config.local.json"):
             if REPLACE_CONFIG_WITH_LOCAL_CONFIG_IF_EXISTS:
                 data = data_local
             elif UPDATE_CONFIG_WITH_LOCAL_CONFIG_IF_EXISTS and data is not None:
-                update_deep(data, data_local)
+                data = update_deep(data, data_local)  # type: ignore
 
             data_local = None
+
 
     except Exception as ex:
         import sys
@@ -128,8 +160,8 @@ if file_exists("esp32config.local.json"):
 
         logger.error(_out.getvalue())
 
-mac = ubinascii.hexlify(network.WLAN(network.STA_IF).config('mac'), ':').decode()
-mac_no_colon: str = mac.replace(':', '')
+
+
 logger.debug(f"{mac_no_colon=}")
 
 # mpremote connect /dev/ttyUSB0 mip install pprint
@@ -207,3 +239,7 @@ def get_config_data_bool(_data: dict[str, str|float|int|bool]|dict[str, str|floa
 # TODO: check for stored config-variables on chip ?!
 # TODO: improvement fetch (further) config from url with mac/chip-id as parameter ?!
 
+gc.collect()
+
+if __name__ == "__main__":
+    logger.info("__main__")

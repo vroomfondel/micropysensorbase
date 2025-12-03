@@ -35,8 +35,15 @@ DISABLE_INET: bool = False
 if "disable_inet" in config.data and config.get_config_data_bool(config.data, "disable_inet"):
     DISABLE_INET = True
 
-if "disable_autosetup" in config.data and config.get_config_data_bool(config.data, "disable_autosetup"):
-    DISABLED_AUTO_SETUP = True
+if "disable_autosetup" in config.data:
+    if config.get_config_data_bool(config.data, "disable_autosetup"):
+        DISABLED_AUTO_SETUP = True
+        logger.info(f"{DISABLED_AUTO_SETUP=} ENABLED")
+    else:
+        logger.info(f"{DISABLED_AUTO_SETUP=}")
+else:
+    logger.info(f"{DISABLED_AUTO_SETUP=} since not found in config")
+
 
 msgtimer: Timer = Timer(0)
 measuretimer: Timer = Timer(1)

@@ -24,7 +24,6 @@ import time
 # https://github.com/micropython/micropython-lib
 
 import logging
-logging.basic_config(level=logging.DEBUG, format="%(asctime)s.%(msecs)03d - %(name)s - %(levelname)s - %(message)s")
 
 logger = logging.get_logger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -157,11 +156,17 @@ if rc == machine.DEEPSLEEP_RESET:
 if rc == machine.SOFT_RESET:
     logger.info("RESET CAUSE :: SOFT_RESET")
 
-import micropython
-micropython.alloc_emergency_exception_buf(100)
+# import micropython
+# micropython.alloc_emergency_exception_buf(100)
 
 logger.info("BOOT DONE")
 
 logger.info("you could update me by issuing these commands:\n"
             "import mip\n\n"
-            "mip.install(\"https://github.com/vroomfondel/micropysensorbase\", mpy=True, target=\"/\")\n\n")
+            "mip.install(\"github:vroomfondel/micropysensorbase/\", mpy=True, target=\"/\")\n\n")
+
+#import ssl
+#ssl._create_default_context = lambda: ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+
+#import mip
+#mip.install("github:vroomfondel/micropysensorbase/main.py", mpy=False, target="/")

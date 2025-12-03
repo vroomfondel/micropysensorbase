@@ -1,10 +1,17 @@
 # https://github.com/micropython/micropython-lib/blob/master/python-stdlib/logging/logging.py
-from micropython import const
+
 import io
 import sys
 
 if sys.implementation.name != 'micropython':
-    from stdlib._typeshed import MaybeNone, StrPath
+    from typing import TypeAlias
+    StrPath: TypeAlias = str | bytes
+    # MaybeNone: TypeAlias = None | object
+    def const(indata: int) -> int:
+        return indata
+else:
+    from micropython import const  # type: ignore
+
 
 import time
 
@@ -17,7 +24,7 @@ NOTSET = const(0)
 
 _DEFAULT_LEVEL = const(WARNING)
 
-_level_dict = {
+_level_dict: dict[int, str] = {
     CRITICAL: "CRITICAL",
     ERROR: "ERROR",
     WARNING: "WARNING",
@@ -27,7 +34,7 @@ _level_dict = {
 }
 
 _loggers: dict[str, "Logger"] = {}
-_stream: io.TextIOBase | MaybeNone = sys.stderr
+_stream: io.TextIOBase | MaybeNone = sys.stderr  #type: ignore
 _default_fmt = "%(levelname)s:%(name)s:%(message)s"
 _default_datefmt = "%Y-%m-%d %H:%M:%S"
 

@@ -5,19 +5,19 @@ if [ $? -ne 0 ] ; then
   echo CHGDIR failed.
 fi
 
-mpys=$(jq -r '.urls[3:][][0]' package.json)
+pys=$(jq -r '.urls[3:][][0]' package.json)
 
-for i in $mpys ; do
-  if [[ "${i}" == *.json ]]; then
+for pyfile in ${pys} ; do
+  if [[ "${pyfile}" == *.json ]]; then
     continue
 	fi
 
-  pyfile="${i%.mpy}.py"
+  mpyfile="${pyfile%.py}.mpy"
 
   echo ${pyfile}
 
-	if [[ -f "${i}" && "${i}" -nt "${pyfile}" ]]; then
-	  echo -e \\tskipping ${pyfile} since ${i} is NEWER\\n
+	if [[ -f "${mpyfile}" && "${mpyfile}" -nt "${pyfile}" ]]; then
+	  echo -e \\tskipping ${pyfile} since ${mpyfile} is NEWER\\n
 	  continue
   fi
 
