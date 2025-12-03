@@ -2,6 +2,9 @@ import urequests
 import json
 import gc
 
+# import ssl
+# ssl._create_default_context = lambda: ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+
 def do_miplike_install(base_url: str = "https://raw.githubusercontent.com/vroomfondel/micropysensorbase/main") -> None:
     # 1. Lade package.json
     pkg_url = f"{base_url}/package.json"
