@@ -163,10 +163,12 @@ logger.info("BOOT DONE")
 
 logger.info("you could update me by issuing these commands:\n"
             "import mip\n\n"
-            "mip.install(\"github:vroomfondel/micropysensorbase/\", mpy=True, target=\"/\")\n\n")
+            "mip.install(\"https://raw.githubusercontent.com/vroomfondel/micropysensorbase/main/package.json\", mpy=True, target=\"/\")\n\n")
 
 #import ssl
 #ssl._create_default_context = lambda: ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
 
 #import mip
 #mip.install("github:vroomfondel/micropysensorbase/main.py", mpy=False, target="/")
+# -> kriege ich protocol error...
+# mip.install("https://raw.githubusercontent.com/vroomfondel/micropysensorbase/main/package.json")
