@@ -15,60 +15,62 @@ if __name__ in config.get_config_data_dict(config.data, "loglevel"):
     if melv is not None:
         logger.setLevel(melv)
 
-from umqtt.simple import MQTTClient as MQTTClientSimple
+# from umqtt.simple import MQTTClient as MQTTClientSimple
 # from umqtt.robust import MQTTClient as MQTTClientRobust
 
 #### needed for retain-bit ####
 # from umqtt.simple import MQTTException
 # taken from https://github.com/micropython/micropython-lib/blob/master/micropython/umqtt.simple/umqtt/simple.py
 # and adapted
-# import socket
-# import struct
-# from binascii import hexlify
-# class MQTTClientSimple(umqtt.simple.MQTTClient):
-#     # Wait for a single incoming MQTT message and process it.
-#     # Subscribed messages are delivered to a callback previously
-#     # set by .set_callback() method. Other (internal) MQTT
-#     # messages processed internally.
-#     def wait_msg(self):
-#         res = self.sock.read(1)
-#         self.sock.setblocking(True)
-#         if res is None:
-#             return None
-#         if res == b"":
-#             raise OSError(-1)
-#         if res == b"\xd0":  # PINGRESP
-#             sz = self.sock.read(1)[0]
-#             assert sz == 0
-#             return None
-#         op = res[0]
-#         if op & 0xF0 != 0x30:
-#             return op
-#         sz = self._recv_len()
-#         topic_len = self.sock.read(2)
-#         topic_len = (topic_len[0] << 8) | topic_len[1]
-#         topic = self.sock.read(topic_len)
-#         sz -= topic_len + 2
-#         if op & 6:
-#             pid = self.sock.read(2)
-#             pid = pid[0] << 8 | pid[1]
-#             sz -= 2
-#
-#         msg = self.sock.read(sz)
-#
-#         # do not ignore retained
-#         retained = op & 0x01
-#
-#         if self.cb is not None:
-#             self.cb(topic, msg, retained == 1)
-#
-#         if op & 6 == 2:
-#             pkt = bytearray(b"\x40\x02\0\0")
-#             struct.pack_into("!H", pkt, 2, pid)
-#             self.sock.write(pkt)
-#         elif op & 6 == 4:
-#             assert 0
-#         return op
+import socket
+from binascii import hexlify
+import struct
+import umqtt.simple
+class MQTTClientSimple(umqtt.simple.MQTTClient):
+    # Wait for a single incoming MQTT message and process it.
+    # Subscribed messages are delivered to a callback previously
+    # set by .set_callback() method. Other (internal) MQTT
+    # messages processed internally.
+    def wait_msg(self) -> int:
+        assert self.sock is not None
+
+        res = self.sock.read(1)
+        self.sock.setblocking(True)
+        if res is None:
+            return None  # type: ignore
+        if res == b"":
+            raise OSError(-1)
+        if res == b"\xd0":  # PINGRESP
+            sz = self.sock.read(1)[0]
+            assert sz == 0
+            return None  # type: ignore
+        op = res[0]
+        if op & 0xF0 != 0x30:
+            return op
+        sz = self._recv_len()
+        topic_len = self.sock.read(2)
+        topic_len = (topic_len[0] << 8) | topic_len[1]
+        topic = self.sock.read(topic_len)
+        sz -= topic_len + 2
+        if op & 6:
+            pid = self.sock.read(2)
+            pid = pid[0] << 8 | pid[1]
+            sz -= 2
+        msg = self.sock.read(sz)
+
+        # do not ignore retained
+        retained = op & 0x01
+
+        if self.cb is not None:
+            self.cb(topic, msg, retained == 1)
+
+        if op & 6 == 2:
+            pkt = bytearray(b"\x40\x02\0\0")
+            struct.pack_into("!H", pkt, 2, pid)
+            self.sock.write(pkt)
+        elif op & 6 == 4:
+            assert 0
+        return op
 
 
 
