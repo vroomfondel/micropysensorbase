@@ -1,6 +1,4 @@
 # https://github.com/micropython/micropython-lib/blob/master/python-stdlib/logging/logging.py
-from io import TextIOWrapper, IOBase
-
 from micropython import const
 import io
 import sys
@@ -32,6 +30,13 @@ _loggers: dict[str, "Logger"] = {}
 _stream: io.TextIOBase | MaybeNone = sys.stderr
 _default_fmt = "%(levelname)s:%(name)s:%(message)s"
 _default_datefmt = "%Y-%m-%d %H:%M:%S"
+
+def get_log_level_by_name(loglevelname: str) -> int|None:
+    for k, v in _level_dict.items():
+        if v == loglevelname:
+            return k
+
+    return None
 
 
 class LogRecord:
@@ -65,7 +70,7 @@ class Handler:
 
 
 class StreamHandler(Handler):
-    def __init__(self, stream: io.TextIOBase|io.TextIOWrapper|None=None) -> None:
+    def __init__(self, stream: io.TextIOBase|None=None) -> None:
         super().__init__()
         self.stream: io.TextIOBase = _stream if stream is None else stream
         self.terminator: str = "\n"
@@ -235,7 +240,7 @@ def basic_config(
     format: str|None=None,
     datefmt: str|None=None,
     level: int=WARNING,
-    stream: TextIOWrapper|IOBase|None=None,
+    stream: io.TextIOWrapper|io.IOBase|None=None,
     encoding: str="UTF-8",
     force: bool=False,
 ) -> None:
