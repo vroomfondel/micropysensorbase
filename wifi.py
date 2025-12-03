@@ -16,7 +16,7 @@ import logging
 logger = logging.get_logger(__name__)
 logger.setLevel(logging.DEBUG)
 
-mac = ubinascii.hexlify(network.WLAN().config('mac'), ':').decode()
+mac: str = ubinascii.hexlify(network.WLAN().config('mac'), ':').decode()  # type: ignore
 mac_no_colon: str = mac.replace(':', '')
 logger.info(f"MAC: {mac}")
 
@@ -29,17 +29,21 @@ elif "hostnameprefix" in config.data:
 else:
     wlan.config(hostname=f"esp32_{mac_no_colon}")
 
-try:
-    import boot_ssd
-except Exception as ex:
-    _out = io.StringIO()
-    sys.print_exception(ex)
-    sys.print_exception(ex, _out)
+boot_ssd_enabled: bool = False
 
-    logger.error(_out.getvalue())
+if "boot_ssd" in config.data and config.get_config_data_bool(config.data, "boot_ssd"):
+    try:
+        import boot_ssd
+        boot_ssd_enabled = True
+    except Exception as ex:
+        _out = io.StringIO()
+        sys.print_exception(ex)
+        sys.print_exception(ex, _out)
+
+        logger.error(_out.getvalue())
 
 
-def get_wifi_strength():
+def get_wifi_strength() -> object|None:
     global wlan
     try:
         return wlan.status('rssi')
@@ -81,7 +85,7 @@ def get_wifi_config() -> dict:
 
 def ensure_wifi(watchdog: machine.WDT|None = None) -> tuple|None:
     # global data
-    global wlan, wlan_scanlist
+    global wlan, wlan_scanlist, boot_ssd_enabled
 
     ret: tuple | None = None if not wlan.isconnected else wlan.ifconfig()
 
@@ -99,9 +103,10 @@ def ensure_wifi(watchdog: machine.WDT|None = None) -> tuple|None:
             _bssid = None
             _bestrssi = None
             scaninfo = wlan.scan()
+            wanted_ssid: str = config.get_config_data_str(config.get_config_data_dict(config.data, w), "SSID")
             for i in scaninfo:
                 ssid, bssid, channel, RSSI, authmode, hidden = i
-                if ssid.decode('utf-8') == config.data[w]["SSID"]:
+                if ssid.decode('utf-8') == wanted_ssid:
                     if _bestrssi:
                         if _bestrssi < RSSI:
                             logger.info(f"BEST ONE SO FAR:: {ssid=} bssid={ubinascii.hexlify(bssid)} {channel=} {RSSI=} {authmode=} {hidden=}")
@@ -114,15 +119,15 @@ def ensure_wifi(watchdog: machine.WDT|None = None) -> tuple|None:
 
             if _bssid is None:
                 logger.info(
-                    f'connecting to network {config.data[w]["SSID"]} bssid=NONE...')  # or just scan and connect to best ?!
+                    f'connecting to network {wanted_ssid} bssid=NONE...')  # or just scan and connect to best ?!
             else:
                 logger.info(
-                    f'connecting to network {config.data[w]["SSID"]} bssid={ubinascii.hexlify(_bssid)}...')  # or just scan and connect to best ?!
+                    f'connecting to network {wanted_ssid} bssid={ubinascii.hexlify(_bssid)}...')  # or just scan and connect to best ?!
 
-            apssid = config.data[w]["SSID"]
+            apssid = wanted_ssid  # config.data[w]["SSID"]
 
             try:
-                if boot_ssd.ssd:
+                if boot_ssd_enabled and boot_ssd.ssd:
                     boot_ssd.ssd.fill(0)
                     boot_ssd.ssd.text(f"Connecting WiFi", 0, 0, 1)
                     boot_ssd.ssd.text(f"SSID: {apssid}", 0, 9, 1)
@@ -130,8 +135,11 @@ def ensure_wifi(watchdog: machine.WDT|None = None) -> tuple|None:
             except Exception as exx:
                 logger.error(str(exx))
 
-            wlan.connect(apssid, config.data[w]["password"], bssid=_bssid)
-            for _ in range(config.data[w]["retries"]):
+            pw: str = config.get_config_data_str(config.get_config_data_dict(config.data, w), "password")
+            retries: int = config.get_config_data_int(config.get_config_data_dict(config.data, w), "retries")
+
+            wlan.connect(apssid, pw, bssid=_bssid)
+            for _ in range(retries):
                 if watchdog:
                     watchdog.feed()
 
@@ -143,7 +151,7 @@ def ensure_wifi(watchdog: machine.WDT|None = None) -> tuple|None:
                     # ensureWEBREpl()
 
                     try:
-                        if boot_ssd.ssd:
+                        if boot_ssd_enabled and boot_ssd.ssd:
                             boot_ssd.ssd.text(f"Connected.", 0, 18, 1)
                             boot_ssd.ssd.show()
                     except Exception as exx:
@@ -151,7 +159,7 @@ def ensure_wifi(watchdog: machine.WDT|None = None) -> tuple|None:
 
                     break
                 else:
-                    time.sleep(1)
+                    time.sleep(1)  # type: ignore[attr-defined]
             else:
                 logger.info("disonnecting WIFI")
                 wlan.disconnect()
@@ -160,7 +168,10 @@ def ensure_wifi(watchdog: machine.WDT|None = None) -> tuple|None:
 
 def ensure_wifi_catch_reset(reset_if_wifi_fails: bool = True, watchdog: machine.WDT|None = None) -> tuple:
     try:
-        return ensure_wifi(watchdog=watchdog)
+        ret: tuple|None = ensure_wifi(watchdog=watchdog)
+        if ret is None:
+            raise Exception("WIFI FAILED")
+        return ret
     except Exception as ex:
         _timestring = time.getisotimenow()
 
@@ -174,10 +185,12 @@ def ensure_wifi_catch_reset(reset_if_wifi_fails: bool = True, watchdog: machine.
             logger.info("RESETTING... in 60s")
             if watchdog:
                 logger.info("\tor earlier if watchdog kicks in...")
-            time.sleep(60)
+            time.sleep(60)  # type: ignore[attr-defined]
             machine.reset()
 
-def start_web_repl():
+    return None, None, None, None, None
+
+def start_web_repl() -> None:
     import webrepl
     webrepl.start(password=config.data["webrepl"]["password"])  #type: ignore
 

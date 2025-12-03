@@ -256,7 +256,7 @@ class SH1106_I2C(SH1106):
                  width: int,
                  height: int,
                  i2c: machine.SoftI2C|machine.I2C,
-                 res: machine.Pin|None,
+                 res: machine.Pin|None=None,
                  addr: int=0x3c,
                  rotate: int=0,
                  external_vcc: bool=False,
