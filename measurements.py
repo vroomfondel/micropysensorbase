@@ -42,10 +42,7 @@ measurec += 1
 
 import dht
 
-# from ssd1306 import SSD1306_I2C
-# from sh1106 import SH1106_I2C
 from usmbus import SMBus
-from ina226_raspi import INA226
 
 soft_i2cbus: machine.SoftI2C | None = None
 ssd: SH1106_I2C | SSD1306_I2C | None = None  # type: ignore
@@ -79,7 +76,7 @@ if "boot_ssd" in config.data and config.get_config_data_bool(config.data, "boot_
 logger.debug(f"measurements.py::{measurec}::After check for boot_ssd")
 measurec += 1
 
-ina: INA226 | None = None
+ina: INA226 | None = None  # type: ignore
 
 adc_input_pin: machine.Pin | None = None
 digital_input_pin: machine.Pin | None = None
@@ -179,6 +176,7 @@ def setup_pins() -> None:
             if "address" in ina226c:
                 ina_address = config.get_config_data_int(ina226c, "address")
 
+            from ina226_raspi import INA226
             ina = INA226(
                 address=ina_address,
                 smbus=smbus,
@@ -223,6 +221,7 @@ def setup_pins() -> None:
             if "flip_en" in ssd1306 and config.get_config_data_bool(ssd1306, "flip_en"):
                 flip_en = True
 
+            from ssd1306 import SSD1306_I2C
             ssd = SSD1306_I2C(
                 width=config.get_config_data_int(ssd1306, "width"),
                 height=config.get_config_data_int(ssd1306, "height"),
@@ -243,6 +242,7 @@ def setup_pins() -> None:
             if "flip_en" in sh1106 and config.get_config_data_bool(sh1106, "flip_en"):
                 flip_en = True
 
+            from sh1106 import SH1106_I2C
             ssd = SH1106_I2C(
                 width=config.get_config_data_int(sh1106, "width"),
                 height=config.get_config_data_int(sh1106, "height"),
@@ -422,7 +422,7 @@ last_dht11_measure_sent_data: DHTREADDATA | None = None
 last_dht22_measure_sent_data: DHTREADDATA | None = None
 
 
-def ina226read(ina226: INA226) -> INAREADDATA:
+def ina226read(ina226: INA226) -> INAREADDATA:  # type: ignore
     inadata: INAREADDATA = INAREADDATA(
         current=ina226.current(),
         busvoltage=ina226.voltage(),
@@ -451,62 +451,85 @@ def send_data_to_mosquitto(data: INAREADDATA | DHTREADDATA) -> None:
 
     timestring: str = time.getisotimenow()
 
+    msgd: str|None = None
+    topicd: str|None = None
+
     if isinstance(data, INAREADDATA):
+        msgd = mqttwrap.value_to_mqtt_string(value=data.current, created_at=timestring)
+        topicd = mqttwrap.get_feed("mafeed")
+
+        logger.info(f"send_data_to_mosquitto({topicd}): {msgd}")
+
         mqttwrap.publish_one(
-            topic=mqttwrap.get_feed("mafeed"),
-            msg=mqttwrap.value_to_mqtt_string(value=data.current, created_at=timestring),
+            topic=topicd,
+            msg=msgd,
             retain=True,
             qos=1,
             reset_if_mqtt_fails=True
         )
 
+        msgd = mqttwrap.value_to_mqtt_string(value=data.busvoltage, created_at=timestring)
+        topicd = mqttwrap.get_feed("busvoltagefeed")
+
+        logger.info(f"send_data_to_mosquitto({topicd}): {msgd}")
         mqttwrap.publish_one(
-            topic=mqttwrap.get_feed("busvoltagefeed"),
-            msg=mqttwrap.value_to_mqtt_string(
-                value=data.busvoltage, created_at=timestring
-            ),
+            topic=topicd,
+            msg=msgd,
             retain=True,
             qos=1,
             reset_if_mqtt_fails=True
         )
 
+        msgd = mqttwrap.value_to_mqtt_string(value=data.to_dict(), created_at=timestring)
+        topicd = mqttwrap.get_feed("loggingfeed")
+
+        logger.info(f"send_data_to_mosquitto({topicd}): {msgd}")
         mqttwrap.publish_one(
-            topic=mqttwrap.get_feed("loggingfeed"),
-            msg=mqttwrap.value_to_mqtt_string(
-                value=data.to_dict(), created_at=timestring
-            ),
+            topic=topicd,
+            msg=msgd,
             retain=True,
             qos=1,
             reset_if_mqtt_fails=True
         )
     elif isinstance(data, DHTREADDATA):
+        msgd = mqttwrap.value_to_mqtt_string(value=data.temperature, created_at=timestring)
+        topicd = mqttwrap.get_feed(f"{data.measure_device_name}_temperaturefeed")
+
+        logger.info(f"send_data_to_mosquitto({topicd}): {msgd}")
         mqttwrap.publish_one(
-            topic=mqttwrap.get_feed(f"{data.measure_device_name}_temperaturefeed"),
-            msg=mqttwrap.value_to_mqtt_string(value=data.temperature, created_at=timestring),
+            topic=topicd,
+            msg=msgd,
             retain=True,
             qos=1,
             reset_if_mqtt_fails=True
         )
 
+        msgd = mqttwrap.value_to_mqtt_string(value=data.humidity, created_at=timestring)
+        topicd = mqttwrap.get_feed(f"{data.measure_device_name}_humidityfeed")
+
+        logger.info(f"send_data_to_mosquitto({topicd}): {msgd}")
         mqttwrap.publish_one(
-            topic=mqttwrap.get_feed(f"{data.measure_device_name}_humidityfeed"),
-            msg=mqttwrap.value_to_mqtt_string(
-                value=data.humidity, created_at=timestring
-            ),
+            topic=topicd,
+            msg=msgd,
             retain=True,
             qos=1,
             reset_if_mqtt_fails=True
         )
 
+        msgd = mqttwrap.value_to_mqtt_string(value=data.to_dict(), created_at=timestring)
+        topicd = mqttwrap.get_feed("loggingfeed")
+
+        logger.info(f"send_data_to_mosquitto({topicd}): {msgd}")
         mqttwrap.publish_one(
-            topic=mqttwrap.get_feed("loggingfeed"),
-            msg=mqttwrap.value_to_mqtt_string(
-                value=data.to_dict(), created_at=timestring
-            ),
+            topic=topicd,
+            msg=msgd,
             retain=True,
             qos=1,
             reset_if_mqtt_fails=True
         )
+
+    gc.collect()
+    logger.debug(f"{gc.mem_free()=}")
 
 
 def measure_masked_arg(arg: int) -> None:
@@ -617,9 +640,9 @@ def dht_measure(dht_measuredevice: dht.DHT11 | dht.DHT22, send_data_forced: bool
         measure_device_name=n
     )
 
-    logger.debug(f"d={n} {dhtdata.measure_device_name=}")
-    logger.debug(f"d={n} {dhtdata.temperature=}")
-    logger.debug(f"d={n} {dhtdata.humidity=}")
+    logger.info(f"dht_measure({n}): {dhtdata.measure_device_name=}")
+    logger.info(f"dht_measure({n}): {dhtdata.temperature=}")
+    logger.info(f"dht_measure({n}): {dhtdata.humidity=}")
 
     temperature_change_send_trigger: bool = False
     humidity_change_send_trigger: bool = False
