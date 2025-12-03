@@ -51,21 +51,17 @@ if "boot_ssd" in config.data and config.get_config_data_bool(config.data, "boot_
 import sys
 import io
 
-if "disable_inet" not in config.data or not config.data["disable_inet"]:
+if not config.DISABLE_INET:
     import wifi
     wifi.ensure_wifi()
     wifi.start_web_repl()
 
-
     try:
         import ntptime
 
-        intversion = sys.implementation.version[0]*100 + sys.implementation.version[1]
-        logger.info(f"DETECTED VERSION {sys.implementation.version=} => {intversion}")
-
         gwntp = None
 
-        if intversion >= 124:
+        if config.INTVERSION >= 124:
             gwntp = wifi.wlan.ipconfig("gw4")
         else:
             gwntp = wifi.wlan.ifconfig()[2]
@@ -156,4 +152,11 @@ if rc == machine.DEEPSLEEP_RESET:
 if rc == machine.SOFT_RESET:
     logger.info("RESET CAUSE :: SOFT_RESET")
 
+import micropython
+micropython.alloc_emergency_exception_buf(100)
+
 logger.info("BOOT DONE")
+
+# import mip
+# >>> mip.install("github:peterhinch/micropython-mqtt")
+# mpremote mip install github:peterhinch/micropython-mqtt
