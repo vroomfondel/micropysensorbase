@@ -20,6 +20,10 @@ DISABLED_AUTO_SETUP: bool = False
 logger = logging.get_logger(__name__)
 logger.setLevel(logging.INFO)
 
+if __name__ in config.get_config_data_dict(config.data, "loglevel"):
+    melv: int|None = logging.get_log_level_by_name(config.get_config_data_str(config.get_config_data_dict(config.data, "loglevel"), "main"))
+    if melv is not None:
+        logger.setLevel(melv)
 
 mainc: int = 0
 logger.debug(f"main.py::{mainc}::STARTING")
