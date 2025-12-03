@@ -1,6 +1,15 @@
 {
     "disable_autosetup": false,
     "enable_watchdog": true,
+    "enable_lock": true,
+    "measure_tele_period_s": 60,
+    "chckmsgs_period_ms": 3000,
+    "measuretimer_period_ms": 10000,
+    "loglevel": {
+      "main": "INFO",
+      "mqttwrap": "INFO",
+      "measurements": "INFO"
+    },
     "webrepl": {
         "password": "<SOMEPASSWORDSECRET>"
     },
@@ -33,6 +42,15 @@
 
         "loggingfeed": "esp32/{clientid}/logging",
 
+        "mafeed": "esp32/{clientid}/ma",
+        "busvoltagefeed": "esp32/{clientid}/busvoltage",
+        "wasserstandfeed": "esp32/{clientid}/wasserstand",
+
+        "dht11_temperaturefeed": "esp32/{clientid}/dht11/temperature",
+        "dht11_humidityfeed": "esp32/{clientid}/dht11/humidity",
+        "dht22_temperaturefeed": "esp32/{clientid}/dht22/temperature",
+        "dht22_humidityfeed": "esp32/{clientid}/dht22/humidity",
+
         "lat_loc1": 12.345167,
         "lon_loc1": 9.876543,
         "ele_loc1": 6.789,
@@ -58,6 +76,14 @@
         "address": 64
     },
     "adc": {
+        "enabled": false,
+        "input_pin": 35
+    },
+    "dht22": {
+        "enabled": false,
+        "input_pin": 35
+    },
+    "dht11": {
         "enabled": false,
         "input_pin": 35
     },
