@@ -26,6 +26,8 @@
     ["ssd1306.mpy", "ssd1306.mpy"],
     ["veml7700.mpy", "veml7700.mpy"],
 
+    ["mymip.mpy", "mymip.mpy"],
+
     ["esp32config.json", "esp32config.json"]
   ]
 }

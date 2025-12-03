@@ -169,6 +169,8 @@ logger.info("you could update me by issuing these commands:\n"
 #ssl._create_default_context = lambda: ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
 
 #import mip
+# mip.install("https://raw.githubusercontent.com/vroomfondel/micropysensorbase/main/package.json", mpy=True, target="/")
 #mip.install("github:vroomfondel/micropysensorbase/main.py", mpy=False, target="/")
+#  mip.install("github:vroomfondel/micropysensorbase", mpy=True, target="/")
 # -> kriege ich protocol error...
 # mip.install("https://raw.githubusercontent.com/vroomfondel/micropysensorbase/main/package.json")
