@@ -10,7 +10,8 @@
       "main": "INFO",
       "mqttwrap": "INFO",
       "measurements": "INFO",
-      "config": "INFO"
+      "config": "INFO",
+      "boot": "INFO"
     },
     "webrepl": {
         "password": "<SOMEPASSWORDSECRET>"
