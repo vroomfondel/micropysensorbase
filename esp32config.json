@@ -1,4 +1,5 @@
 {
+    "boot_ssd": false,
     "disable_autosetup": false,
     "enable_watchdog": true,
     "enable_lock": true,
