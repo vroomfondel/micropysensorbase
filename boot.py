@@ -23,12 +23,11 @@ import time
 # mip install modules!
 # https://github.com/micropython/micropython-lib
 
-import logging
+import config
 
+import logging
 logger = logging.get_logger(__name__)
 logger.setLevel(logging.DEBUG)
-
-import config
 
 if __name__ in config.get_config_data_dict(config.data, "loglevel"):
     melv: int|None = logging.get_log_level_by_name(config.get_config_data_str(config.get_config_data_dict(config.data, "loglevel"), "boot"))
