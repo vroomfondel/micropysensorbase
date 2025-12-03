@@ -1,0 +1,31 @@
+{
+  "version": "0.42",
+  "urls": [
+    ["boot.py", "/boot.py"],
+    ["main.py", "/main.py"],
+    ["time.py", "/time.py"],
+
+    ["config.mpy", "/config.mpy"],
+    ["wifi.mpy", "/wifi.mpy"],
+
+    ["logging.mpy", "/logging.mpy"],
+    ["meminfo.mpy", "/meminfo.mpy"],
+    ["mqttwrap.mpy", "/mqttwrap.mpy"],
+
+    ["boot_ssd.mpy", "/boot_ssd.mpy"],
+    ["usmbus.mpy", "/usmbus.mpy"],
+    ["ina226_raspi.mpy", "/ina226_raspi.mpy"],
+
+    ["i2c_lcd.mpy", "/i2c_lcd.mpy"],
+    ["ina219.mpy", "/ina219.mpy"],
+    ["ina226.mpy", "/ina226.mpy"],
+
+    ["measurements.mpy", "/measurements.mpy"],
+
+    ["sh1106.mpy", "/sh1106.mpy"],
+    ["ssd1306.mpy", "/ssd1306.mpy"],
+    ["veml7700.mpy", "/veml7700.mpy"],
+
+    ["esp32config.json", "/esp32config.json"]
+  ]
+}
