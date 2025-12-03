@@ -5,26 +5,26 @@
     ["main.py", "/main.py"],
     ["time.py", "/time.py"],
 
-    ["config.mpy", "/config.mpy"],
-    ["wifi.mpy", "/wifi.mpy"],
+    ["config.py", "/config.py"],
+    ["wifi.py", "/wifi.py"],
 
-    ["logging.mpy", "/logging.mpy"],
-    ["meminfo.mpy", "/meminfo.mpy"],
-    ["mqttwrap.mpy", "/mqttwrap.mpy"],
+    ["logging.py", "/logging.py"],
+    ["meminfo.py", "/meminfo.py"],
+    ["mqttwrap.py", "/mqttwrap.py"],
 
-    ["boot_ssd.mpy", "/boot_ssd.mpy"],
-    ["usmbus.mpy", "/usmbus.mpy"],
-    ["ina226_raspi.mpy", "/ina226_raspi.mpy"],
+    ["boot_ssd.py", "/boot_ssd.py"],
+    ["usmbus.py", "/usmbus.py"],
+    ["ina226_raspi.py", "/ina226_raspi.py"],
 
-    ["i2c_lcd.mpy", "/i2c_lcd.mpy"],
-    ["ina219.mpy", "/ina219.mpy"],
-    ["ina226.mpy", "/ina226.mpy"],
+    ["i2c_lcd.py", "/i2c_lcd.py"],
+    ["ina219.py", "/ina219.py"],
+    ["ina226.py", "/ina226.py"],
 
-    ["measurements.mpy", "/measurements.mpy"],
+    ["measurements.py", "/measurements.py"],
 
-    ["sh1106.mpy", "/sh1106.mpy"],
-    ["ssd1306.mpy", "/ssd1306.mpy"],
-    ["veml7700.mpy", "/veml7700.mpy"],
+    ["sh1106.py", "/sh1106.py"],
+    ["ssd1306.py", "/ssd1306.py"],
+    ["veml7700.py", "/veml7700.py"],
 
     ["esp32config.json", "/esp32config.json"]
   ]

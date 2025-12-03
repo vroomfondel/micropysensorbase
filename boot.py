@@ -162,6 +162,6 @@ micropython.alloc_emergency_exception_buf(100)
 
 logger.info("BOOT DONE")
 
-# import mip
-# >>> mip.install("github:peterhinch/micropython-mqtt")
-# mpremote mip install github:peterhinch/micropython-mqtt
+logger.info("you could update me by issuing these commands:\n"
+            "import mip\n\n"
+            "mip.install(\"https://github.com/vroomfondel/micropysensorbase\", mpy=True, target=\"/\")\n\n")
