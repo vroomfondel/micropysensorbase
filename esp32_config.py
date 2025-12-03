@@ -44,9 +44,9 @@ class WiFiConfig(ConfigSection):
     """WiFi-Konfiguration"""
 
     def __init__(self, data: dict | None = None) -> None:
-        self.SSID = None
-        self.password = None
-        self.retries = 10
+        self.SSID: str | None = None
+        self.password: str | None = None
+        self.retries: int = 10
         super().__init__(data)
 
 
@@ -54,7 +54,7 @@ class WebReplConfig(ConfigSection):
     """WebREPL-Konfiguration"""
 
     def __init__(self, data: dict | None = None) -> None:
-        self.password = None
+        self.password: str | None = None
         super().__init__(data)
 
 
@@ -62,27 +62,27 @@ class MosquittoConfig(ConfigSection):
     """MQTT/Mosquitto-Konfiguration"""
 
     def __init__(self, data: dict | None = None) -> None:
-        self.MOSQUITTO_USERNAME = None
-        self.MOSQUITTO_PASSWORD = None
-        self.MOSQUITTO_HOST = None
-        self.MOSQUITTO_PORT = 1883
-        self.lwtfeed = None
-        self.statusfeed = None
-        self.controlfeed = None
-        self.loggingfeed = None
-        self.mafeed = None
-        self.busvoltagefeed = None
-        self.wasserstandfeed = None
-        self.dht11_temperaturefeed = None
-        self.dht11_humidityfeed = None
-        self.dht22_temperaturefeed = None
-        self.dht22_humidityfeed = None
-        self.lat_loc1 = None
-        self.lon_loc1 = None
-        self.ele_loc1 = None
-        self.lat_loc2 = None
-        self.lon_loc2 = None
-        self.ele_loc2 = None
+        self.MOSQUITTO_USERNAME: str | None = None
+        self.MOSQUITTO_PASSWORD: str | None = None
+        self.MOSQUITTO_HOST: str | None = None
+        self.MOSQUITTO_PORT: int = 1883
+        self.lwtfeed: str | None = None
+        self.statusfeed: str | None = None
+        self.controlfeed: str | None = None
+        self.loggingfeed: str | None = None
+        self.mafeed: str | None = None
+        self.busvoltagefeed: str | None = None
+        self.wasserstandfeed: str | None = None
+        self.dht11_temperaturefeed: str | None = None
+        self.dht11_humidityfeed: str | None = None
+        self.dht22_temperaturefeed: str | None = None
+        self.dht22_humidityfeed: str | None = None
+        self.lat_loc1: float | None = None
+        self.lon_loc1: float | None = None
+        self.ele_loc1: float | None = None
+        self.lat_loc2: float | None = None
+        self.lon_loc2: float | None = None
+        self.ele_loc2: float | None = None
         super().__init__(data)
 
 
@@ -90,9 +90,9 @@ class I2CConfig(ConfigSection):
     """I2C-Konfiguration"""
 
     def __init__(self, data: dict | None = None) -> None:
-        self.enabled = False
-        self.sda_pin = 21
-        self.scl_pin = 22
+        self.enabled: bool = False
+        self.sda_pin: int = 21
+        self.scl_pin: int = 22
         super().__init__(data)
 
 
@@ -100,9 +100,9 @@ class SMBusConfig(ConfigSection):
     """SMBus-Konfiguration"""
 
     def __init__(self, data: dict | None = None) -> None:
-        self.enabled = False
-        self.sda = 21
-        self.scl = 22
+        self.enabled: bool = False
+        self.sda: int = 21
+        self.scl: int = 22
         super().__init__(data)
 
 
@@ -110,10 +110,10 @@ class INA226Config(ConfigSection):
     """INA226-Konfiguration"""
 
     def __init__(self, data: dict | None = None) -> None:
-        self.enabled = False
-        self.shunt_ohms = 0.1
-        self.max_expected_amps = 0.05
-        self.address = 64
+        self.enabled: bool = False
+        self.shunt_ohms: float = 0.1
+        self.max_expected_amps: float = 0.05
+        self.address: int = 64
         super().__init__(data)
 
 
@@ -121,8 +121,8 @@ class ADCConfig(ConfigSection):
     """ADC-Konfiguration"""
 
     def __init__(self, data: dict | None = None) -> None:
-        self.enabled = False
-        self.input_pin = 35
+        self.enabled: bool = False
+        self.input_pin: int = 35
         super().__init__(data)
 
 
@@ -130,8 +130,8 @@ class DHTConfig(ConfigSection):
     """DHT-Sensor-Konfiguration (DHT11/DHT22)"""
 
     def __init__(self, data: dict | None = None) -> None:
-        self.enabled = False
-        self.input_pin = 35
+        self.enabled: bool = False
+        self.input_pin: int = 35
         super().__init__(data)
 
 
@@ -139,10 +139,10 @@ class RotaryConfig(ConfigSection):
     """Rotary-Encoder-Konfiguration"""
 
     def __init__(self, data: dict | None = None) -> None:
-        self.enabled = False
-        self.clk_pin = 25
-        self.dt_pin = 26
-        self.sw_pin = 27
+        self.enabled: bool = False
+        self.clk_pin: int = 25
+        self.dt_pin: int = 26
+        self.sw_pin: int = 27
         super().__init__(data)
 
 
@@ -150,8 +150,8 @@ class DigitalOutputConfig(ConfigSection):
     """Digital-Output-Konfiguration"""
 
     def __init__(self, data: dict | None = None) -> None:
-        self.enabled = False
-        self.output_pin = 27
+        self.enabled: bool = False
+        self.output_pin: int = 27
         super().__init__(data)
 
 
@@ -159,8 +159,8 @@ class DigitalInputConfig(ConfigSection):
     """Digital-Input-Konfiguration"""
 
     def __init__(self, data: dict | None = None) -> None:
-        self.enabled = False
-        self.input_pin = 26
+        self.enabled: bool = False
+        self.input_pin: int = 26
         super().__init__(data)
 
 
@@ -168,8 +168,8 @@ class WakeupDeepSleepConfig(ConfigSection):
     """Wakeup-DeepSleep-Konfiguration"""
 
     def __init__(self, data: dict | None = None) -> None:
-        self.enabled = False
-        self.input_pin = 26
+        self.enabled: bool = False
+        self.input_pin: int = 26
         super().__init__(data)
 
 
@@ -177,8 +177,8 @@ class PWMConfig(ConfigSection):
     """PWM-Konfiguration"""
 
     def __init__(self, data: dict | None = None) -> None:
-        self.enabled = False
-        self.output_pin = 19
+        self.enabled: bool = False
+        self.output_pin: int = 19
         super().__init__(data)
 
 
@@ -186,9 +186,9 @@ class UARTConfig(ConfigSection):
     """UART-Konfiguration"""
 
     def __init__(self, data: dict | None = None) -> None:
-        self.enabled = False
-        self.rx_pin = 16
-        self.tx_pin = 17
+        self.enabled: bool = False
+        self.rx_pin: int = 16
+        self.tx_pin: int = 17
         super().__init__(data)
 
 
@@ -196,11 +196,11 @@ class DisplayConfig(ConfigSection):
     """Display-Konfiguration (SSD1306/SH1106)"""
 
     def __init__(self, data: dict | None = None) -> None:
-        self.enabled = False
-        self.address = 60
-        self.width = 128
-        self.height = 64
-        self.flip_en = False
+        self.enabled: bool = False
+        self.address: int = 60
+        self.width: int = 128
+        self.height: int = 64
+        self.flip_en: bool = False
         super().__init__(data)
 
 
@@ -208,8 +208,8 @@ class ESPNowPeerConfig(ConfigSection):
     """ESP-NOW Peer-Konfiguration"""
 
     def __init__(self, data: dict | None = None) -> None:
-        self.mac = None
-        self.lmk = None
+        self.mac: str | None = None
+        self.lmk: str | None = None
         super().__init__(data)
 
 
@@ -217,8 +217,8 @@ class ESPNowConfig(ConfigSection):
     """ESP-NOW-Konfiguration"""
 
     def __init__(self, data: dict | None = None) -> None:
-        self.channel = 7
-        self.pmk = None
+        self.channel: int = 7
+        self.pmk: str | None = None
         self.peers: dict = {}
         super().__init__(data)
 
@@ -237,7 +237,7 @@ class GetTimeESPNowConfig(ConfigSection):
     """Get-Time-per-ESPNow-Konfiguration"""
 
     def __init__(self, data: dict | None = None) -> None:
-        self.enabled = False
+        self.enabled: bool = False
         super().__init__(data)
 
 
@@ -251,47 +251,47 @@ class ESP32Config:
         Args:
             config_file: Pfad zur JSON-Config-Datei
         """
-        self.config_file = config_file
+        self.config_file: str = config_file
         self._raw_config: dict = {}
         self.device_mac: str | None = None
 
         # Top-Level Config-Attribute
-        self.boot_ssd = False
-        self.disable_autosetup = False
-        self.enable_watchdog = True
-        self.enable_lock = True
-        self.hostnameprefix = "micropyhydro_"
-        self.hostname = None
-        self.disable_inet = False
-        self.get_time_per_uart = False
-        self.measure_tele_period_s = 60
-        self.chckmsgs_period_ms = 3000
-        self.measuretimer_period_ms = 10000
-        self.loglevel: dict = {}
-        self.forcerestart_after_running_seconds = 86400
+        self.boot_ssd: bool = False
+        self.disable_autosetup: bool = False
+        self.enable_watchdog: bool = True
+        self.enable_lock: bool = True
+        self.hostnameprefix: str = "micropyhydro_"
+        self.hostname: str | None = None
+        self.disable_inet: bool = False
+        self.get_time_per_uart: bool = False
+        self.measure_tele_period_s: int = 60
+        self.chckmsgs_period_ms: int = 3000
+        self.measuretimer_period_ms: int = 10000
+        self.loglevel: dict[str, str] = {}
+        self.forcerestart_after_running_seconds: int = 86400
 
         # Config-Sektionen als Klassen
-        self.webrepl = WebReplConfig()
-        self.wifi1 = WiFiConfig()
-        self.wifi2 = WiFiConfig()
-        self.wifi3 = WiFiConfig()
-        self.mosquitto = MosquittoConfig()
-        self.i2c = I2CConfig()
-        self.smbus = SMBusConfig()
-        self.ina226 = INA226Config()
-        self.adc = ADCConfig()
-        self.dht11 = DHTConfig()
-        self.dht22 = DHTConfig()
-        self.rotary = RotaryConfig()
-        self.digital_output = DigitalOutputConfig()
-        self.digital_input = DigitalInputConfig()
-        self.wakeup_deepsleep_pin = WakeupDeepSleepConfig()
-        self.pwm = PWMConfig()
-        self.uart = UARTConfig()
-        self.ssd1306 = DisplayConfig()
-        self.sh1106 = DisplayConfig()
-        self.espnow = ESPNowConfig()
-        self.get_time_per_espnow = GetTimeESPNowConfig()
+        self.webrepl: WebReplConfig = WebReplConfig()
+        self.wifi1: WiFiConfig = WiFiConfig()
+        self.wifi2: WiFiConfig = WiFiConfig()
+        self.wifi3: WiFiConfig = WiFiConfig()
+        self.mosquitto: MosquittoConfig = MosquittoConfig()
+        self.i2c: I2CConfig = I2CConfig()
+        self.smbus: SMBusConfig = SMBusConfig()
+        self.ina226: INA226Config = INA226Config()
+        self.adc: ADCConfig = ADCConfig()
+        self.dht11: DHTConfig = DHTConfig()
+        self.dht22: DHTConfig = DHTConfig()
+        self.rotary: RotaryConfig = RotaryConfig()
+        self.digital_output: DigitalOutputConfig = DigitalOutputConfig()
+        self.digital_input: DigitalInputConfig = DigitalInputConfig()
+        self.wakeup_deepsleep_pin: WakeupDeepSleepConfig = WakeupDeepSleepConfig()
+        self.pwm: PWMConfig = PWMConfig()
+        self.uart: UARTConfig = UARTConfig()
+        self.ssd1306: DisplayConfig = DisplayConfig()
+        self.sh1106: DisplayConfig = DisplayConfig()
+        self.espnow: ESPNowConfig = ESPNowConfig()
+        self.get_time_per_espnow: GetTimeESPNowConfig = GetTimeESPNowConfig()
 
         self.load()
 
