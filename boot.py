@@ -23,11 +23,12 @@ import time
 # mip install modules!
 # https://github.com/micropython/micropython-lib
 
-import config
-
 import logging
+logging.basic_config(level=logging.DEBUG, format="%(asctime)s.%(msecs)03d - %(name)s - %(levelname)s - %(message)s")
 logger = logging.get_logger(__name__)
 logger.setLevel(logging.DEBUG)
+
+import config
 
 if __name__ in config.get_config_data_dict(config.data, "loglevel"):
     melv: int|None = logging.get_log_level_by_name(config.get_config_data_str(config.get_config_data_dict(config.data, "loglevel"), "boot"))
@@ -163,7 +164,7 @@ logger.info("BOOT DONE")
 logger.info("you could update me by issuing these commands:\n"
             "import mip\n\n"
             "mip.install(\"https://raw.githubusercontent.com/vroomfondel/micropysensorbase/main/package.json\", mpy=True, target=\"/\")\n\tbzw.\n"
-            "mip.install(\"github:vroomfondel/micropysensorbase\", mpy=True, target=\"/\" /\")\n\n")
+            "mip.install(\"github:vroomfondel/micropysensorbase\", mpy=True, target=\"/\")\n\n")
 
 #import ssl
 #ssl._create_default_context = lambda: ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)

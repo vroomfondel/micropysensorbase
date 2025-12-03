@@ -13,14 +13,13 @@ if IS_MICROPYTHON:
     import ubinascii
 
     mac = ubinascii.hexlify(network.WLAN(network.STA_IF).config('mac'), ':').decode()
+    del ubinascii
 else:
     import binascii as ubunascii
 
 mac_no_colon: str = mac.replace(':', '')
 
 import logging
-logging.basic_config(level=logging.DEBUG, format="%(asctime)s.%(msecs)03d - %(name)s - %(levelname)s - %(message)s")
-
 logger = logging.get_logger(__name__)
 logger.setLevel(logging.INFO)
 
@@ -147,7 +146,7 @@ if file_exists("esp32config.local.json"):
             elif UPDATE_CONFIG_WITH_LOCAL_CONFIG_IF_EXISTS and data is not None:
                 data = update_deep(data, data_local)  # type: ignore
 
-            data_local = None
+            del data_local
 
 
     except Exception as ex:
