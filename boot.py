@@ -29,8 +29,13 @@ logging.basic_config(level=logging.DEBUG, format="%(asctime)s.%(msecs)03d - %(na
 logger = logging.get_logger(__name__)
 logger.setLevel(logging.DEBUG)
 
-
 import config
+
+if __name__ in config.get_config_data_dict(config.data, "loglevel"):
+    melv: int|None = logging.get_log_level_by_name(config.get_config_data_str(config.get_config_data_dict(config.data, "loglevel"), "boot"))
+    if melv is not None:
+        logger.setLevel(melv)
+
 
 if "boot_ssd" in config.data and config.get_config_data_bool(config.data, "boot_ssd"):
     try:
