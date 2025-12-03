@@ -1,3 +1,5 @@
+*.mpy
+/mqtt_as
 /umqtt
 .idea/
 /upydev_.config
