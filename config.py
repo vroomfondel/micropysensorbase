@@ -8,7 +8,12 @@ import logging
 import json
 
 logger = logging.get_logger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
+
+# if __name__ in config.get_config_data_dict(config.data, "loglevel"):
+#     melv: int|None = logging.get_log_level_by_name(config.get_config_data_str(config.get_config_data_dict(config.data, "loglevel"), "config"))
+#     if melv is not None:
+#         logger.setLevel(melv)
 
 DISABLE_INET: bool = False
 ENABLE_WATCHDOG: bool = True
