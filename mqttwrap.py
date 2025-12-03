@@ -191,7 +191,8 @@ def ensure_mqtt_connect(watchdog: machine.WDT|None = None, timeout_s: float|None
 
             _mqttclient.set_callback(sub_cb)
 
-            lwtfeed: str = format_with_clientid(config.data["mosquitto"]["lwtfeed"])
+            lwtf: str = config.get_config_data_str(config.get_config_data_dict(config.data, "mosquitto"), "lwtfeed")
+            lwtfeed: str = format_with_clientid(lwtf)
 
             logger.debug(f"mqttwrap.py::ensure_mqtt_connect::lwt_feed: {lwtfeed}")
             _mqttclient.set_last_will(
