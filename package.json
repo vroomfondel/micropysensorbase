@@ -1,33 +1,33 @@
 {
   "version": "0.42",
   "urls": [
-    ["boot.py", "boot.py"],
-    ["main.py", "main.py"],
-    ["time.py", "time.py"],
+    ["micropysensorbase/boot.py", "micropysensorbase/boot.py"],
+    ["micropysensorbase/main.py", "micropysensorbase/main.py"],
+    ["micropysensorbase/time.py", "micropysensorbase/time.py"],
 
-    ["config.mpy", "config.mpy"],
-    ["wifi.mpy", "wifi.mpy"],
+    ["micropysensorbase/config.py", "micropysensorbase/config.py"],
+    ["micropysensorbase/wifi.py", "micropysensorbase/wifi.py"],
 
-    ["logging.mpy", "logging.mpy"],
-    ["meminfo.mpy", "meminfo.mpy"],
-    ["mqttwrap.mpy", "mqttwrap.mpy"],
+    ["micropysensorbase/logging.py", "micropysensorbase/logging.py"],
+    ["micropysensorbase/meminfo.py", "micropysensorbase/meminfo.py"],
+    ["micropysensorbase/mqttwrap.py", "micropysensorbase/mqttwrap.py"],
 
-    ["boot_ssd.mpy", "boot_ssd.mpy"],
-    ["usmbus.mpy", "usmbus.mpy"],
-    ["ina226_raspi.mpy", "ina226_raspi.mpy"],
+    ["micropysensorbase/boot_ssd.py", "micropysensorbase/boot_ssd.py"],
+    ["micropysensorbase/usmbus.py", "micropysensorbase/usmbus.py"],
+    ["micropysensorbase/ina226_raspi.py", "micropysensorbase/ina226_raspi.py"],
 
-    ["i2c_lcd.mpy", "i2c_lcd.mpy"],
-    ["ina219.mpy", "ina219.mpy"],
-    ["ina226.mpy", "ina226.mpy"],
+    ["micropysensorbase/i2c_lcd.py", "micropysensorbase/i2c_lcd.py"],
+    ["micropysensorbase/ina219.py", "micropysensorbase/ina219.py"],
+    ["micropysensorbase/ina226.py", "micropysensorbase/ina226.py"],
 
-    ["measurements.mpy", "measurements.mpy"],
+    ["micropysensorbase/measurements.py", "micropysensorbase/measurements.py"],
 
-    ["sh1106.mpy", "sh1106.mpy"],
-    ["ssd1306.mpy", "ssd1306.mpy"],
-    ["veml7700.mpy", "veml7700.mpy"],
+    ["micropysensorbase/sh1106.py", "micropysensorbase/sh1106.py"],
+    ["micropysensorbase/ssd1306.py", "micropysensorbase/ssd1306.py"],
+    ["micropysensorbase/veml7700.py", "micropysensorbase/veml7700.py"],
 
-    ["mymip.mpy", "mymip.mpy"],
+    ["micropysensorbase/mymip.py", "micropysensorbase/mymip.py"],
 
-    ["esp32config.json", "esp32config.json"]
+    ["micropysensorbase/esp32config.json", "micropysensorbase/esp32config.json"]
   ]
 }
