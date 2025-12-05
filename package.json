@@ -1,6 +1,7 @@
 {
   "version": "0.42",
   "urls": [
+    ["micropysensorbase/__init__.py", "micropysensorbase/__init__.py"],
     ["micropysensorbase/boot.py", "micropysensorbase/boot.py"],
     ["micropysensorbase/main.py", "micropysensorbase/main.py"],
     ["micropysensorbase/time.py", "micropysensorbase/time.py"],

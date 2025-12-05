@@ -5,7 +5,10 @@ if [ $? -ne 0 ] ; then
   echo CHGDIR failed.
 fi
 
-pfs=$(jq -r '.urls[3:][][0]' package.json)
+# skip first three lines/results...
+# pfs=$(jq -r '.urls[3:][][0]' package.json)
+
+pfs=$(jq -r '.urls[][0]' package.json)
 
 for pf in ${pfs} ; do
   if [[ "${mpyfile}" == *.json ]]; then

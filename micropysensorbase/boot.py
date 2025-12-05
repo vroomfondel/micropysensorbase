@@ -170,6 +170,9 @@ logger.info("you could update me by issuing these commands:\n"
 #import ssl
 #ssl._create_default_context = lambda: ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
 
+# mip is weird.
+# mpremote mip install https://raw.githubusercontent.com/vroomfondel/micropysensorbase/main/micropysensorbase/mymip.py
+
 #import mip
 # mip.install("https://raw.githubusercontent.com/vroomfondel/micropysensorbase/main/package.json", mpy=True, target="/")
 #mip.install("github:vroomfondel/micropysensorbase/main.py", mpy=False, target="/")
@@ -178,6 +181,6 @@ logger.info("you could update me by issuing these commands:\n"
 # mip.install("https://raw.githubusercontent.com/vroomfondel/micropysensorbase/main/package.json")
 
 # mpremote mip install package.json
-# mpremote mip install "github:vroomfondel/micropysensorbase --target=/
+# mpremote mip install "github:vroomfondel/micropysensorbase --mpy --target=/
 # mpremote mip install github:vroomfondel/micropysensorbase --no-mpy --target=/
-# mpremote mip install --index https://raw.githubusercontent.com/vroomfondel/micropysensorbase/main micropysensorbase
+# mpremote mip install --mpy --index https://raw.githubusercontent.com/vroomfondel/micropysensorbase/main micropysensorbase
