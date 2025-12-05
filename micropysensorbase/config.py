@@ -245,6 +245,13 @@ def get_config_data_bool(_data: dict[str, str|float|int|bool]|dict[str, str|floa
 
 gc.collect()
 
-if __name__ == "__main__":
-    logger.info(__package__)
+def main():
     logger.info("__main__")
+    try:
+        logger.info(__file__)
+        logger.info(__package__)
+    except Exception as ex:
+        logger.error(str(ex))
+
+if __name__ == "__main__":
+    main()

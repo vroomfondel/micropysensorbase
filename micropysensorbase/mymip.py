@@ -49,3 +49,6 @@ def do_miplike_install(mpy: bool=True, base_url: str = "https://raw.githubuserco
         gc.collect()
 
     print("Installation abgeschlossen!")
+
+if __name__ == "__main__":
+    do_miplike_install()
