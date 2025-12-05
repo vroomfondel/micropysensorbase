@@ -72,7 +72,7 @@
 # display.show()
 
 from micropython import const
-from micropysensorbase import time
+from . import time
 import framebuf
 
 import machine

@@ -1,4 +1,4 @@
-from micropysensorbase import time
+from . import time
 
 from machine import Pin, I2C
 from math import trunc

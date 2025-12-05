@@ -1,7 +1,7 @@
 import sys
 import io
 import network
-import config
+from . import config
 import machine
 import ubinascii
 

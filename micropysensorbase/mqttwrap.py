@@ -1,11 +1,11 @@
-import config
-import wifi
+from . import config
+from . import wifi
 
 import machine
 import sys
 import io
 
-from micropysensorbase import logging, time
+from . import logging, time
 
 logger = logging.get_logger(__name__)
 logger.setLevel(logging.INFO)

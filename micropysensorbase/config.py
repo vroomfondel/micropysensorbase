@@ -1,3 +1,8 @@
+from micropysensorbase import logging
+print("config.py::SETTING logging.basic")
+logging.basic_config(level=logging.DEBUG, format="%(asctime)s.%(msecs)03d - %(name)s - %(levelname)s - %(message)s")
+
+
 import os
 import sys
 import json
@@ -19,7 +24,6 @@ else:
 
 mac_no_colon: str = mac.replace(':', '')
 
-from micropysensorbase import logging
 
 logger = logging.get_logger(__name__)
 logger.setLevel(logging.INFO)
@@ -125,7 +129,17 @@ def update_deep(base: dict|list, u: dict|list) -> dict|list:
 
 
 try:
-    with open("esp32config.json") as fp:
+    logger.info(f"Trying to read esp32config.json relative to {__file__}")
+    # fn = "esp32config.json"
+    fn: str = __file__
+    fn = fn.rstrip("/config.py")
+    logger.debug(f"{fn=}")
+    fn = fn.rstrip("/config.mpy")
+    logger.debug(f"{fn=}")
+    fn = fn + "/esp32config.json"
+    logger.debug(f"{fn=}")
+
+    with open(fn) as fp:
         data = json.load(fp)
 except Exception as ex:
     import sys
@@ -245,11 +259,13 @@ def get_config_data_bool(_data: dict[str, str|float|int|bool]|dict[str, str|floa
 
 gc.collect()
 
-def main():
-    logger.info("__main__")
+def main() -> None:
+    logger.info("main()")
     try:
-        logger.info(__file__)
-        logger.info(__package__)
+        logger.info(f"{__file__}")
+        logger.info(f"{__name__=}")
+
+        logger.info(locals()) # type: ignore
     except Exception as ex:
         logger.error(str(ex))
 

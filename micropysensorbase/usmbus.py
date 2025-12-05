@@ -1,5 +1,5 @@
 """ Provides an SMBus class for use on micropython """
-from micropysensorbase import logging
+from . import logging
 
 # https://github.com/vroomfondel/micropython-smbus/tree/add-read_word_data
 # https://github.com/matteius/micropython-smbus/blob/fix-edgecase-from-bme280-work/usmbus/__init__.py

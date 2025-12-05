@@ -144,7 +144,7 @@ class SSD1306_SPI(SSD1306):
         self.dc = dc
         self.res = res
         self.cs = cs
-        from micropysensorbase import time
+        from . import time
 
         self.res(1)
         time.sleep_ms(1)  # type: ignore[attr-defined]

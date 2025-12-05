@@ -1,8 +1,6 @@
 # make sure boot.py include micropysensorbase.boot
 
 
-print(__package__)
-print(__file__)
-print(__name__)
+print(locals())
 
 import micropysensorbase.boot

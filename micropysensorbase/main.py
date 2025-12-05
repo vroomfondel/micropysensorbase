@@ -2,14 +2,16 @@ import gc
 import io
 import sys
 
-from micropysensorbase import logging, time
-from micropysensorbase.time import sleep  # type: ignore[attr-defined]
+import micropython
+
+from . import logging, time
+from .time import sleep  # type: ignore[attr-defined]
 from machine import Timer, WDT
 import machine
 
-import mqttwrap
-import wifi
-import config
+from . import mqttwrap
+from . import wifi
+from . import config
 
 import _thread
 
@@ -205,7 +207,7 @@ def setup() -> None:
     )
 
     # better put that classes
-    import measurements
+    from . import measurements
     measurements.WATCHDOG = WATCHDOG
     if config.ENABLE_LOCK:
         measurements.lock = _thread.allocate_lock()
@@ -254,7 +256,7 @@ def whoami() -> str:
 def setup_wifi_and_mqtt(mqtt_connect_timeout_s: int| None=30) -> None:
     global mainc
 
-    import meminfo
+    from . import meminfo
 
     if not DISABLE_INET:
         logger.debug(f"main.py::{mainc}::BEFORE wifi.ensure_wifi_catch_reset()")
@@ -274,16 +276,6 @@ def setup_wifi_and_mqtt(mqtt_connect_timeout_s: int| None=30) -> None:
 def main() -> None:
     logger.debug("START::main.py::main()")
 
-    from measurements import main as measurements_main
-    measurements_main()
-
-    logger.debug("DONE::main::main()")
-
-
-logger.debug(f"main.py::{mainc}::Before __name__ == \"__main__\"")
-mainc += 1
-
-if __name__ == "__main__":
     import micropython
 
     micropython.mem_info()
@@ -297,7 +289,21 @@ if __name__ == "__main__":
         setup()  # also calls setup_pins
         logger.debug("main.py::setup() done.")
 
-        logger.debug("main.py::calling main()")
-        main()
-        logger.debug("main.py::main() done.")
+        logger.debug("main.py::calling import .measurements.main")
+
+        from .measurements import main as measurements_main
+        logger.debug("main.py::calling .measurements.main()")
+        measurements_main()
+
+        logger.debug("main.py::DONE::calling .measurements.main()")
+
+
+    logger.debug("DONE::main::main()")
+
+
+logger.debug(f"main.py::{mainc}::Before __name__ == \"__main__\"")
+mainc += 1
+
+if __name__ == "__main__":
+    main()
 

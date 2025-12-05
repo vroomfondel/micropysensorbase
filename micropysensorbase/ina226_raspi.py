@@ -7,14 +7,14 @@ https://github.com/e71828/pi_ina226/blob/main/ina226.py
 
 """
 
-from micropysensorbase import logging
+from . import logging
 from math import trunc
 
 # from smbus import SMBus
 
 # changed for micropython to usmbus facade
 # from smbus2 import SMBus
-from usmbus import SMBus
+from .usmbus import SMBus
 
 
 def to_bytes(register_value: int) -> list[int]:

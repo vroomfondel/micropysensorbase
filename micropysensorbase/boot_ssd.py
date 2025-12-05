@@ -1,4 +1,4 @@
-from micropysensorbase import logging
+from . import logging
 import micropython
 
 micropython.alloc_emergency_exception_buf(100)

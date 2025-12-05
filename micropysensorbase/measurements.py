@@ -1,15 +1,15 @@
 import gc
 import io
 import sys
-from micropysensorbase import logging, time
+from . import logging, time
 import micropython
-from micropysensorbase.time import sleep  # type: ignore[attr-defined]
+from .time import sleep  # type: ignore[attr-defined]
 from machine import Timer, WDT
 import machine
 
-import mqttwrap
-import wifi
-import config
+from . import mqttwrap
+from . import wifi
+from . import config
 
 import _thread
 
@@ -42,7 +42,7 @@ measurec += 1
 
 import dht
 
-from usmbus import SMBus
+from . usmbus import SMBus
 
 soft_i2cbus: machine.SoftI2C | None = None
 ssd: SH1106_I2C | SSD1306_I2C | None = None  # type: ignore
@@ -62,7 +62,7 @@ dht11: dht.DHT11 | None = None
 
 if "boot_ssd" in config.data and config.get_config_data_bool(config.data, "boot_ssd"):
     logger.debug("boot_ssd was active... flipping from there...")
-    import boot_ssd
+    from . import boot_ssd
 
     ssd = boot_ssd.ssd
     sdapin = boot_ssd.sdapin
@@ -176,7 +176,7 @@ def setup_pins() -> None:
             if "address" in ina226c:
                 ina_address = config.get_config_data_int(ina226c, "address")
 
-            from ina226_raspi import INA226
+            from . ina226_raspi import INA226
             ina = INA226(
                 address=ina_address,
                 smbus=smbus,
@@ -221,7 +221,7 @@ def setup_pins() -> None:
             if "flip_en" in ssd1306 and config.get_config_data_bool(ssd1306, "flip_en"):
                 flip_en = True
 
-            from ssd1306 import SSD1306_I2C
+            from . ssd1306 import SSD1306_I2C
             ssd = SSD1306_I2C(
                 width=config.get_config_data_int(ssd1306, "width"),
                 height=config.get_config_data_int(ssd1306, "height"),
@@ -242,7 +242,7 @@ def setup_pins() -> None:
             if "flip_en" in sh1106 and config.get_config_data_bool(sh1106, "flip_en"):
                 flip_en = True
 
-            from sh1106 import SH1106_I2C
+            from . sh1106 import SH1106_I2C
             ssd = SH1106_I2C(
                 width=config.get_config_data_int(sh1106, "width"),
                 height=config.get_config_data_int(sh1106, "height"),

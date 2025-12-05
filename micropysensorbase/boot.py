@@ -22,13 +22,12 @@
 # mip install modules!
 # https://github.com/micropython/micropython-lib
 
-from micropysensorbase import logging, time
+from . import config
 
-logging.basic_config(level=logging.DEBUG, format="%(asctime)s.%(msecs)03d - %(name)s - %(levelname)s - %(message)s")
+
+from . import logging, time
 logger = logging.get_logger(__name__)
 logger.setLevel(logging.DEBUG)
-
-import config
 
 if __name__ in config.get_config_data_dict(config.data, "loglevel"):
     melv: int|None = logging.get_log_level_by_name(
@@ -39,7 +38,7 @@ if __name__ in config.get_config_data_dict(config.data, "loglevel"):
 
 if "boot_ssd" in config.data and config.get_config_data_bool(config.data, "boot_ssd"):
     try:
-        import boot_ssd
+        from . import boot_ssd
         boot_ssd.setup()
     except Exception as ex:
         import sys
@@ -57,7 +56,7 @@ import sys
 import io
 
 if not config.DISABLE_INET:
-    import wifi
+    from . import wifi
     wifi.ensure_wifi()
     wifi.start_web_repl()
 
@@ -101,7 +100,7 @@ if not config.DISABLE_INET:
 else:
     logger.info("INET DISABLED... NO NTPTIME ETC...")
 
-import meminfo
+from . import meminfo
 meminfo.main()
 
 # https://forum.micropython.org/viewtopic.php?f=2&t=4034

@@ -65,7 +65,7 @@
 # THE SOFTWARE.
 
 from machine import I2C, SoftI2C
-from micropysensorbase import time
+from . import time
 from micropython import const
 
 

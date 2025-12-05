@@ -12,7 +12,7 @@ if sys.implementation.name != 'micropython':
 else:
     from micropython import const  # type: ignore
 
-from micropysensorbase import time
+from . import time
 
 CRITICAL = const(50)
 ERROR = const(40)

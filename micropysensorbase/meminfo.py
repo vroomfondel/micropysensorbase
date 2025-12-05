@@ -1,7 +1,7 @@
 import gc
 import os
 
-from micropysensorbase import logging
+from . import logging
 
 logger = logging.get_logger(__name__)
 logger.setLevel(logging.INFO)
