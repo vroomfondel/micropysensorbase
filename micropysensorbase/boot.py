@@ -163,10 +163,22 @@ logger.info("BOOT DONE")
 
 logger.info("you could update me by issuing these commands:\n"
             "import mip\n\n"
-            "mip.install(\"https://raw.githubusercontent.com/vroomfondel/micropysensorbase/main/package.json\", mpy=True, target=\"/\")\n\tbzw.\n"
-            "mip.install(\"github:vroomfondel/micropysensorbase\", mpy=True, target=\"/\")\n\n")
+            "mip.install(\"https://raw.githubusercontent.com/vroomfondel/micropysensorbase/main/package.json\")\n\tbzw.\n"
+            "mip.install(\"github:vroomfondel/micropysensorbase\")\n\n")
 
-#mpremote mip install github:vroomfondel/micropysensorbase/micropysensorbase/mymip.py
+# do not forget to enable/start this afterwards in your own boot.py/main.py
+
+logger.info("or even better (after having set up something like this locally: https://github.com/vroomfondel/mipserver)\n"
+            "import mip\n\n"
+            "mip.install(\"micropysensorbase\", index=\"http://192.168.123.123:18891\")\n"
+            "\tthus installing/updating from a local github-proxy-on-the-fly-mpy-compiler-thingy...")
+
+
+# the next two lines take the "activation" from my github and overwrites whatever boot.py and main.py is currently present on the MCU
+# mpremote mip install --target / github:vroomfondel/micropysensorbase/boot.py
+# mpremote mip install --target / github:vroomfondel/micropysensorbase/main.py
+
+# mpremote mip install github:vroomfondel/micropysensorbase
 
 #import ssl
 #ssl._create_default_context = lambda: ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
@@ -178,7 +190,5 @@ logger.info("you could update me by issuing these commands:\n"
 # -> kriege ich protocol error...
 # mip.install("https://raw.githubusercontent.com/vroomfondel/micropysensorbase/main/package.json")
 
-# mpremote mip install package.json
-# mpremote mip install "github:vroomfondel/micropysensorbase --mpy --target=/
-# mpremote mip install github:vroomfondel/micropysensorbase --no-mpy --target=/
-# mpremote mip install --mpy --index https://raw.githubusercontent.com/vroomfondel/micropysensorbase/main micropysensorbase
+# mpremote mip install "github:vroomfondel/micropysensorbase
+# mpremote mip install github:vroomfondel/micropysensorbase
