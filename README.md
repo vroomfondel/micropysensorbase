@@ -8,6 +8,67 @@ Initial/Main project goal was to setup a device (or to be precise a couple of th
 systems in the field(s) to monitor the water-levels in the drainage system shafts and thus the proper functioning 
 of the drainage pumps and their triggering.
 
+
+### Extended description
+
+This repository provides a reusable MicroPython-based foundation for building ESP32 sensor nodes that publish
+telemetry to an MQTT broker for downstream processing in Node-RED, time-series storage (e.g., InfluxDB), and
+monitoring/alerting (e.g., Uptime Kuma). The reference implementation focuses on hydrostatic water-level
+monitoring for agricultural drainage shafts and pump supervision, but the architecture is intentionally modular
+to support additional sensors and use-cases.
+
+- Purpose and scope
+  - Enable rapid provisioning of one or more ESP32 devices that read sensor data (current, voltage, illumination,
+    custom analog values, etc.) and reliably publish messages via Wi‑Fi/MQTT.
+  - Provide configuration-driven setup (Wi‑Fi, MQTT, I2C, sensor parameters) without reflashing firmware.
+  - Offer an opinionated example flow for transforming and visualizing the data using Node‑RED and InfluxDB,
+    as well as basic uptime/health monitoring.
+
+- Architecture at a glance
+  - Device firmware: MicroPython running on ESP32 with boot/main entry points and a small set of modules for
+    connectivity, configuration, sensor I/O (e.g., INA226), and MQTT publishing.
+  - Transport: MQTT (tested with Mosquitto) using topic conventions that are easy to consume from Node‑RED.
+  - Backend/visualization: Example Node‑RED flows for normalization/calibration and routing to time-series
+    storage and monitoring dashboards (InfluxDB, Uptime Kuma). Grafana can be added if desired.
+
+- Hardware reference (water‑level monitoring)
+  - ESP32 board with Wi‑Fi
+  - INA226-based current/voltage measurement and a DC‑DC boost converter (XL6009/XL6019) to power 24 V sensors
+  - Hydrostatic water level sensor (e.g., TL‑136)
+  - Optional custom PCB (KiCAD files provided) and simple printed enclosure (FreeCAD/STL provided)
+
+- Software components
+  - Wi‑Fi management with retry and configurable credentials
+  - MQTT client wrapper for robust publish/subscribe behavior on lossy links
+  - INA226 measurement driver and helpers for shunt/expected‑amps configuration
+  - Simple logging and diagnostics utilities suitable for constrained devices
+
+- Data flow (typical)
+  1) Sensor read cycle on the ESP32 collects samples (e.g., current/voltage correlated to water level)
+  2) Values are formatted and published to MQTT topics
+  3) Node‑RED consumes topics, applies calibration/offsets, and forwards to InfluxDB
+  4) Uptime‑Kuma (or similar) monitors device and pump activity for alerting
+
+- Configuration
+  - Central JSON config (`esp32config.json` or `esp32config.local.json`) governs Wi‑Fi networks, MQTT broker
+    credentials, I2C pin mapping, and sensor specifics (shunt value, expected current range, etc.).
+  - Behavior can be adapted per device without code changes by distributing a device‑local JSON file.
+
+- Reliability and operations
+  - Designed to run unattended in outdoor enclosures; on boot, devices connect, read, and publish on a schedule.
+  - Example Node‑RED flows include basic normalization and can be extended for fault detection.
+  - Power draw of pumps can be correlated using separate smart plugs (e.g., Tasmota) to verify actuation events.
+
+- Security considerations
+  - Use unique MQTT credentials per device and, where possible, TLS‑enabled brokers.
+  - Isolate the IoT network segment and restrict broker access to trusted clients.
+
+- Extensibility
+  - Add new sensors by implementing lightweight drivers and publishing to the existing topic structure.
+  - Swap storage/visualization backends with minimal changes on the server side.
+
+
+
 ## Getting Started
 
 ### Dependencies
