@@ -1,0 +1,51 @@
+name: mypy and pytests
+
+on:
+  push:
+    branches:
+      - "main"
+
+  pull_request:
+
+#on:
+#  workflow_run:
+#    workflows: ["black-lint and static type check"]
+#    branches: ["main"]
+#    types:
+#      - completed
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    # if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    steps:
+      - name: checkout code
+        uses: actions/checkout@v5
+
+      - name: setting up python env
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+
+      - name: get some runtime info
+        run: |
+          echo PWD: $(pwd)
+          echo ENV: $(env)
+          echo GH-REF: ${{ github.ref }}
+          echo GH-SHA: ${{ github.sha }}
+          tree
+
+      - name: installing make and jq
+        run: |
+          sudo apt update && sudo apt install -y make jq
+
+      - name: installing pip-packages
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: static type checking with mypy
+        run: mypy *.py $(jq -r '.urls[][0]' package.json|grep -v .json)
+
+      - name: run pytest
+        run: make tests

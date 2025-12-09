@@ -1,0 +1,38 @@
+name: black-lint
+
+on:
+  push:
+    branches:
+      - "OFFmain"
+
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout code
+        uses: actions/checkout@v5
+
+      - name: setting up python env
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+
+      - name: get some runtime info
+        run: |
+          echo PWD: $(pwd)
+          echo ENV: $(env)
+          echo GH-REF: ${{ github.ref }}
+          echo GH-SHA: ${{ github.sha }}
+          tree
+
+      - name: installing pip-packages
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: "linting with black :: check only"
+        run: black -l 120 --check  .
+
+

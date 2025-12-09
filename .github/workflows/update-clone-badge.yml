@@ -1,0 +1,32 @@
+name: Update Clone Badge (Python)
+on:
+  schedule:
+    - cron: "0 0 * * *" # Täglich um Mitternacht
+  workflow_dispatch:      # Manuell startbar
+
+jobs:
+  update-stats-python:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      # 1. Python aufsetzen
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.13'
+
+      # 2. PyGithub installieren (macht die API-Aufrufe einfach)
+      # not absolutely necessary here since the script does that on its own... but, that may be considered ugly.
+      - name: Install Dependencies
+        run: pip install PyGithub
+
+      # 3. Das Python-Skript ausführen
+      - name: Run Update Script
+        env:
+          GIST_TOKEN: ${{ secrets.GIST_TOKEN }}
+          GIST_ID: ${{ secrets.GIST_ID }}
+          REPO_TOKEN: ${{ secrets.REPO_PRIV_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: python scripts/update_badge.py
