@@ -1,7 +1,7 @@
 name: Update Clone Badge (Python)
 on:
   schedule:
-    - cron: "0 0 * * *" # Täglich um Mitternacht
+    - cron: "0 0,12,18 * * *" # Täglich um Mitternacht
   workflow_dispatch:      # Manuell startbar
 
 jobs:
