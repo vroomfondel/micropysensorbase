@@ -1,3 +1,8 @@
+[![mypy and pytests](https://github.com/vroomfondel/micropysensorbase/actions/workflows/mypynpytests.yml/badge.svg)](https://github.com/vroomfondel/micropysensorbase/actions/workflows/mypynpytests.yml)
+
+![Cumulative Clones](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/vroomfondel/c17ace0474819e400a8369e269c21dc6/raw/micropysensorbase_clone_count.json)
+
+
 # Some esp32 micropython sensor projectbase
 
 Project containing base-logic / configurable boilerplate for connecting sensors via esp32 via mqtt to nodered/whatever
