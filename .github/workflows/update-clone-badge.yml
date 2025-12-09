@@ -15,7 +15,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.13'
+          python-version: '3.14'
 
       # 2. PyGithub installieren (macht die API-Aufrufe einfach)
       # not absolutely necessary here since the script does that on its own... but, that may be considered ugly.
