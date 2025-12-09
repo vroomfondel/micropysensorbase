@@ -45,7 +45,7 @@ jobs:
           pip install -r requirements-dev.txt
 
       - name: static type checking with mypy
-        run: mypy *.py $(jq -r '.urls[][0]' package.json|grep -v .json)
+        run: mypy --custom-typeshed-dir $(pip show micropython-esp32-esp32-generic-s3-stubs|grep Location|sed s/^.*\ //) *.py $(jq -r '.urls[][0]' package.json|grep -v .json)
 
       - name: run pytest
         run: make tests
