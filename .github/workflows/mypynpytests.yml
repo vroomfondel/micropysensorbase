@@ -37,7 +37,13 @@ jobs:
 
       - name: installing make and jq
         run: |
-          sudo apt update && sudo apt install -y make jq
+          which jq
+          rjq=$?
+          which make
+          rma=$?
+          if [ $rjq -ne 0 ] || [ $rma -ne 0 ] ; then
+            sudo apt update && sudo apt install -y make jq
+          fi
 
       - name: installing pip-packages
         run: |
