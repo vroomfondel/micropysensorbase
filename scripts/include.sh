@@ -5,18 +5,21 @@ GIST_TOKEN="GENERATEMEATOKEN"
 REPO_TOKEN="GENERATEMEATOKEN"
 GITHUB_REPOSITORY="vroomfondel/micropysensorbase"
 
-include_local_sh="$(dirname "$0")/include.local.sh"
-include_local_sh2="$(dirname "$0")/scripts/include.local.sh"
+declare -a include_local_sh
+include_local_sh[0]="$(dirname "$0")/include.local.sh"
+include_local_sh[1]="$(dirname "$0")/scripts/include.local.sh"
+include_local_sh[2]="$(dirname "$0")/../scripts/include.local.sh"
+found=false
 
-if [ -e "${include_local_sh}" ] ; then
-  echo "${include_local_sh}" to be read...
-  source "${include_local_sh}"
-else
-  # echo "${include_local_sh}" does not exist...
-  if [ -e "${include_local_sh2}" ] ; then
-    echo "${include_local_sh2}" to be read...
-    source "${include_local_sh2}"
-  else
-    echo NEITHER "${include_local_sh}" NOR "${include_local_sh2}" exist...
+for path in "${include_local_sh[@]}"; do
+  if [ -e "${path}" ]; then
+    echo "${path} will be read..."
+    source "${path}"
+    found=true
+    break
   fi
+done
+
+if [ "$found" = false ]; then
+  echo "No include.local.sh file[s] found."
 fi
