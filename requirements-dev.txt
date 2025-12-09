@@ -6,4 +6,6 @@ micropython-esp32-esp32-generic-s3-stubs
 mypy
 adafruit-ampy
 webrepl
-
+black
+pytest
+pygithub
