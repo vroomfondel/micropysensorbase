@@ -33,7 +33,7 @@ _level_dict: dict[int, str] = {
 }
 
 _loggers: dict[str, "Logger"] = {}
-_stream: io.TextIOBase | MaybeNone = sys.stderr  #type: ignore
+_stream: io.TextIOBase = sys.stderr  #type: ignore
 _default_fmt = "%(levelname)s:%(name)s:%(message)s"
 _default_datefmt = "%Y-%m-%d %H:%M:%S"
 
@@ -141,9 +141,9 @@ class Logger:
     def get_effective_level(self) -> int:
         return self.level or get_logger().level or _DEFAULT_LEVEL
 
-    def log(self, level: int, msg: str, *args: list[object]|None) -> None:
+    def log(self, level: int, msg: str, *args: object|list[object]|None) -> None:
         if self.is_enabled_for(level):
-            if args:
+            if args and isinstance(args, list):
                 if isinstance(args[0], dict):
                     args = args[0]
                 msg = msg % args
@@ -155,22 +155,22 @@ class Logger:
                 if hasattr(h, "emit"):
                     h.emit(self.record)
 
-    def debug(self, msg: str, *args: None|list[object]) -> None:
+    def debug(self, msg: str, *args: None|object|list[object]) -> None:
         self.log(DEBUG, msg, *args)
 
-    def info(self, msg: str, *args: None|list[object]) -> None:
+    def info(self, msg: str, *args: None|object|list[object]) -> None:
         self.log(INFO, msg, *args)
 
-    def warning(self, msg: str, *args: None|list[object]) -> None:
+    def warning(self, msg: str, *args: None|object|list[object]) -> None:
         self.log(WARNING, msg, *args)
 
-    def error(self, msg: str, *args: None|list[object]) -> None:
+    def error(self, msg: str, *args: None|object|list[object]) -> None:
         self.log(ERROR, msg, *args)
 
-    def critical(self, msg: str, *args: None|list[object]) -> None:
+    def critical(self, msg: str, *args: None|object|list[object]) -> None:
         self.log(CRITICAL, msg, *args)
 
-    def exception(self, msg: str, *args: None|list[object], exc_info: BaseException|None=None) -> None:
+    def exception(self, msg: str, *args: None|object|list[object], exc_info: BaseException|None=None) -> None:
         self.log(ERROR, msg, *args)
         tb = None
         if isinstance(exc_info, BaseException):

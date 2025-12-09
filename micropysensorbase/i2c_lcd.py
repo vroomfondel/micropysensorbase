@@ -1,3 +1,4 @@
+import machine
 import utime
 import gc
 
@@ -16,7 +17,7 @@ class I2cLcd(LcdApi):
     
     #Implements a HD44780 character LCD connected via PCF8574 on I2C
 
-    def __init__(self, i2c, i2c_addr, num_lines, num_columns):
+    def __init__(self, i2c: machine.SoftI2C|machine.I2C, i2c_addr: int, num_lines: int, num_columns: int):
         self.i2c = i2c
         self.i2c_addr = i2c_addr
         self.i2c.writeto(self.i2c_addr, bytes([0]))
@@ -38,7 +39,7 @@ class I2cLcd(LcdApi):
         self.hal_write_command(cmd)
         gc.collect()
 
-    def hal_write_init_nibble(self, nibble):
+    def hal_write_init_nibble(self, nibble: int) -> None:
         # Writes an initialization nibble to the LCD.
         # This particular function is only used during initialization.
         byte = ((nibble >> 4) & 0x0f) << SHIFT_DATA
@@ -46,17 +47,17 @@ class I2cLcd(LcdApi):
         self.i2c.writeto(self.i2c_addr, bytes([byte]))
         gc.collect()
         
-    def hal_backlight_on(self):
+    def hal_backlight_on(self) -> None:
         # Allows the hal layer to turn the backlight on
         self.i2c.writeto(self.i2c_addr, bytes([1 << SHIFT_BACKLIGHT]))
         gc.collect()
         
-    def hal_backlight_off(self):
+    def hal_backlight_off(self) -> None:
         #Allows the hal layer to turn the backlight off
         self.i2c.writeto(self.i2c_addr, bytes([0]))
         gc.collect()
         
-    def hal_write_command(self, cmd):
+    def hal_write_command(self, cmd: int) -> None:
         # Write a command to the LCD. Data is latched on the falling edge of E.
         byte = ((self.backlight << SHIFT_BACKLIGHT) |
                 (((cmd >> 4) & 0x0f) << SHIFT_DATA))
@@ -71,7 +72,7 @@ class I2cLcd(LcdApi):
             utime.sleep_ms(5)
         gc.collect()
 
-    def hal_write_data(self, data):
+    def hal_write_data(self, data: int) -> None:
         # Write data to the LCD. Data is latched on the falling edge of E.
         byte = (MASK_RS |
                 (self.backlight << SHIFT_BACKLIGHT) |

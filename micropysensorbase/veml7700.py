@@ -121,10 +121,12 @@ class VEML7700:
     def __init__(self,
                  address: int =addr,
                  i2c: I2C | SoftI2C | None = None,
-                 it=25,
-                 gain=1/8,
-                 **kwargs):
-       
+                 it: int=25,
+                 gain: float=1/8,
+                 **kwargs: object):
+
+        self.lux: float = 0.0
+
         self.address = address
         if i2c is None:
             raise ValueError('An I2C object is required.')
@@ -145,7 +147,7 @@ class VEML7700:
 
         self.init()
 
-    def init(self):
+    def init(self) -> None:
        
         # load calibration data
         #self.i2c.writeto_mem(self.address, als_conf_0, bytearray([0x00,0x13]) )
@@ -154,14 +156,14 @@ class VEML7700:
         self.i2c.writeto_mem(self.address, als_WL, interrupt_low)
         self.i2c.writeto_mem(self.address, pow_sav, power_save_mode)
         
-    def detect(self):
+    def detect(self) -> None:
         """ Functions is  verified is  module has detecedself.
 
         this function not implemented for this time
         """
         raise RuntimeError("Not yet implemented")  # added HT 20240326
         
-    def read_lux(self):
+    def read_lux(self) -> int:
         """ Reads the data from the sensor and returns the data.
 
             Returns:
@@ -172,14 +174,15 @@ class VEML7700:
         # Reading at a faster frequency will not cause an error, but
         # will result in reading the previous data
 
-        self.lux = bytearray(2)
+        mr: bytearray = bytearray(2)
 
-        time.sleep(.04)  # 40ms
+        time.sleep(.04)  # type: ignore[attr-defined] # 40ms
 
-        self.i2c.readfrom_mem_into(self.address, als, self.lux)
-        self.lux= self.lux[0]+self.lux[1]*256
-        self.lux=self.lux*self.gain
-        return(int(round(self.lux,0)))
+        self.i2c.readfrom_mem_into(self.address, als, mr)
+        self.lux = mr[0] + mr[1] * 256
+        self.lux = self.lux * self.gain
+
+        return(int(round(self.lux, 0)))
         
     
 
