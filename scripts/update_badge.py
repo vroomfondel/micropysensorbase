@@ -80,7 +80,7 @@ def main() -> None:
         "label": "Clones",
         "message": str(total_clones),
         "color": "blue",
-        "namedLogo": "python",  # Kleines Python Logo als Gimmick ;)
+        "namedLogo": "github",
         "logoColor": "white"
     }
 
