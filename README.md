@@ -1,5 +1,5 @@
 [![mypy and pytests](https://github.com/vroomfondel/micropysensorbase/actions/workflows/mypynpytests.yml/badge.svg)](https://github.com/vroomfondel/micropysensorbase/actions/workflows/mypynpytests.yml)
-![Cumulative Clones](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/vroomfondel/c17ace0474819e400a8369e269c21dc6/raw/micropysensorbase_clone_count.json)
+![Cumulative Clones](https://img.shields.io/endpoint?logo=github&url=https://gist.githubusercontent.com/vroomfondel/c17ace0474819e400a8369e269c21dc6/raw/micropysensorbase_clone_count.json)
 
 # Some esp32 micropython sensor projectbase
 
