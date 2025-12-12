@@ -1,6 +1,8 @@
 [![mypy and pytests](https://github.com/vroomfondel/micropysensorbase/actions/workflows/mypynpytests.yml/badge.svg)](https://github.com/vroomfondel/micropysensorbase/actions/workflows/mypynpytests.yml)
 ![Cumulative Clones](https://img.shields.io/endpoint?logo=github&url=https://gist.githubusercontent.com/vroomfondel/c17ace0474819e400a8369e269c21dc6/raw/micropysensorbase_clone_count.json)
 
+![Gemini_Generated_Image_micropysensorbase_ja0mtqja0mtqja0m_250x250.png](Gemini_Generated_Image_micropysensorbase_ja0mtqja0mtqja0m_250x250.png)
+
 # Some esp32 micropython sensor projectbase
 
 Project containing base-logic / configurable boilerplate for connecting sensors via esp32 via mqtt to nodered/whatever
