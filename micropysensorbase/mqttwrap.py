@@ -212,7 +212,12 @@ def ensure_mqtt_connect(watchdog: machine.WDT|None = None, timeout_s: float|None
             logger.debug(f"mqttwrap.py::ensure_mqtt_connect::before trying to connect to {addr=}")
 
             logger.debug(f"mqttwrap.py::ensure_mqtt_connect::before trying to connect with {_mqttclient.user=} {_mqttclient.pswd=}")
-            _mqttclient.connect(clean_session=True, timeout=timeout_s)
+            # older umqtt.simple (e.g. the one frozen into the esp32-firmware) has no timeout-param in connect()
+            try:
+                _mqttclient.connect(clean_session=True, timeout=timeout_s)
+            except TypeError:
+                logger.debug("mqttwrap.py::ensure_mqtt_connect::umqtt.simple without timeout-param -> retrying without it")
+                _mqttclient.connect(clean_session=True)
             logger.debug("mqttwrap.py::ensure_mqtt_connect::after call to .connect()")
 
             if watchdog:
