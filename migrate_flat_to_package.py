@@ -244,6 +244,46 @@ def cleanup_root(keep: set) -> list:
     return removed
 
 
+def _rearm_wdt_feeder() -> None:
+    """Re-arm one timer as a pure watchdog feeder.
+
+    An esp32 WDT cannot be stopped once started, and the old install's is fed
+    only from the timer callbacks quiesce_old_install() just killed. Without a
+    replacement feeder the 30s watchdog panics somewhere inside the mip install
+    - the rescue boot.py survives that, but the run has to be repeated.
+
+    The callback does nothing but feed: no network path, no micropython.schedule(),
+    so it cannot reset the device the way a measure callback would.
+    """
+    from machine import Timer
+
+    wdt = None
+    for name in ("micropysensorbase.main", "main", "__main__"):
+        mod = sys.modules.get(name)
+        if mod is not None:
+            wdt = getattr(mod, "WATCHDOG", None)
+            if wdt is not None:
+                break
+
+    if wdt is None:
+        # a flat install runs main.py as __main__, which need not be registered
+        # in sys.modules at all - fall back to scanning what is there.
+        for mod in sys.modules.values():
+            wdt = getattr(mod, "WATCHDOG", None)
+            if wdt is not None:
+                break
+
+    if wdt is None:
+        print("  no WATCHDOG found - assuming none is active")
+        return
+
+    try:
+        Timer(0).init(period=5_000, mode=Timer.PERIODIC, callback=lambda _: wdt.feed())
+        print("  re-armed Timer(0) as watchdog feeder")
+    except Exception as ex:
+        print("  could not re-arm the watchdog feeder:", ex)
+
+
 def quiesce_old_install() -> None:
     """Silence the running old install. Must be the very first thing we do.
 
@@ -251,6 +291,10 @@ def quiesce_old_install() -> None:
     still reading the config, and such a callback goes measure -> publish ->
     ensure_wifi_catch_reset(), which resets the device mid-migration. The esp32
     has four hardware timers; which of them are in use depends on the revision.
+
+    Killing them costs us the watchdog, though: the old install's WDT is fed
+    only from those callbacks, so one of the timers has to be re-armed as a
+    pure feeder afterwards - see _rearm_wdt_feeder().
     """
     from machine import Timer
 
@@ -259,6 +303,8 @@ def quiesce_old_install() -> None:
             Timer(i).deinit()
         except Exception:
             pass
+
+    _rearm_wdt_feeder()
 
     # A callback handed to micropython.schedule() before the deinit can still
     # fire afterwards. Make its network path a no-op so it cannot reach

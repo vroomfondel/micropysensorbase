@@ -120,6 +120,14 @@ if [ -n "$PORT" ]; then
     fi
 else
     [ -x "$WEBREPLCMD" ] || die "$WEBREPLCMD not found"
+    # webreplcmd's -B/-c/-A paths call repl.send_cmd(), a method webrepl.py does
+    # not have - it is sendcmd(). The exception is caught, printed and swallowed,
+    # and the exit code stays 0. A broken -B would therefore skip the quiesce
+    # unnoticed and let a measure callback reset the device mid-migration.
+    if grep -q 'repl\.send_cmd(' "$WEBREPLCMD"; then
+        die "$WEBREPLCMD calls repl.send_cmd(), which does not exist - the quiesce would be skipped silently.
+       fix: sed -i 's/repl\.send_cmd(/repl.sendcmd(/g' $WEBREPLCMD"
+    fi
     ping -c 2 -W 2 "$IP" >/dev/null 2>&1 || die "$IP does not answer to ping"
 fi
 
