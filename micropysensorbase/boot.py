@@ -169,9 +169,13 @@ logger.info("you could update me by issuing these commands:\n"
 # do not forget to enable/start this afterwards in your own boot.py/main.py
 
 logger.info("or even better (after having set up something like this locally: https://github.com/vroomfondel/mipserver)\n"
-            "import mip\n\n"
-            "mip.install(\"micropysensorbase\", index=\"http://192.168.123.123:18891\")\n"
+            "import mip\nfrom micropysensorbase import config\n\n"
+            "mip.install(\"micropysensorbase\", index=config.get_config_data_str(config.data, \"mip_index\"))\n"
             "\tthus installing/updating from a local github-proxy-on-the-fly-mpy-compiler-thingy...")
+
+# import mip
+# from micropysensorbase import config
+# mip.install("micropysensorbase", index=config.get_config_data_str(config.data, "mip_index"))
 
 
 # the next two lines take the "activation" from my github and overwrites whatever boot.py and main.py is currently present on the MCU
