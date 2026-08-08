@@ -90,22 +90,35 @@ try:
     if _mac in _cfg:
         _merge(_cfg, _cfg[_mac])
 
-    if not _wl.isconnected():
-        import time
+    # keep retrying forever - a single pass would strand the device for good if
+    # the first attempt fails for any transient reason, and in the field there
+    # is no serial console to fall back to
+    import time
+    _round = 0
+    while not _wl.isconnected():
+        _round += 1
         for _slot in ("wifi1", "wifi2", "wifi3"):
             _w = _cfg.get(_slot)
             if not isinstance(_w, dict) or not _w.get("SSID"):
                 continue
             if int(_w.get("retries", 0)) <= 0:
                 continue
-            print("RESCUE-BOOT connecting to", _w["SSID"])
-            _wl.connect(_w["SSID"], _w["password"])
+            print("RESCUE-BOOT round", _round, "connecting to", _w["SSID"])
+            try:
+                _wl.connect(_w["SSID"], _w["password"])
+            except Exception as _cex:
+                print("RESCUE-BOOT connect() failed:", _cex)
             for _i in range(30):
                 if _wl.isconnected():
                     break
                 time.sleep(1)
             if _wl.isconnected():
                 break
+        if not _wl.isconnected():
+            print("RESCUE-BOOT no wifi after round", _round, "- retrying")
+            _wl.active(False)
+            time.sleep(2)
+            _wl.active(True)
 
     print("RESCUE-BOOT wlan:", _wl.isconnected(), _wl.ifconfig() if _wl.isconnected() else None)
 
