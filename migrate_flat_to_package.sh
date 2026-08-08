@@ -23,7 +23,18 @@ WEBREPLCMD=".venv/bin/webreplcmd"
 # kills the periodic callbacks of the old install. Has to run in the *same*
 # session as the command it precedes: a callback goes measure -> publish ->
 # ensure_wifi_catch_reset(), which resets the device mid-migration.
-QUIESCE='from machine import Timer; [Timer(i).deinit() for i in range(4)]'
+#
+# It has to bring its own watchdog feeder, too. Those callbacks are the only
+# thing feeding the 30s WDT, an esp32 WDT cannot be stopped again, and this runs
+# on the very first put - minutes before the migration script could arm a feeder
+# of its own. Without this the device panics somewhere in between, and over
+# WebREPL that looks like a hang: a panic-reset sends no FIN, so the host waits
+# on a dead socket forever.
+#
+# WATCHDOG is looked up in the repl globals first - a flat install runs main.py
+# as __main__, which micropython does not register in sys.modules (verified on
+# device) - and only then in the loaded modules, where a package install has it.
+QUIESCE='from machine import Timer; import sys; [Timer(i).deinit() for i in range(4)]; w=globals().get("WATCHDOG") or next((g for g in (getattr(m,"WATCHDOG",None) for m in sys.modules.values()) if g is not None), None); Timer(0).init(period=5000, mode=Timer.PERIODIC, callback=lambda t: w.feed()) if w is not None else print("no WATCHDOG found - assuming none is active")'
 
 IP=""
 PORT=""

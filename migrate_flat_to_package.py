@@ -254,11 +254,15 @@ def _rearm_wdt_feeder() -> None:
 
     The callback does nothing but feed: no network path, no micropython.schedule(),
     so it cannot reset the device the way a measure callback would.
+
+    The deinit above also kills whatever feeder the calling shell armed, so this
+    has to restore one unconditionally - see the QUIESCE one-liner in
+    migrate_flat_to_package.sh.
     """
-    from machine import Timer
+    from machine import Timer, WDT
 
     wdt = None
-    for name in ("micropysensorbase.main", "main", "__main__"):
+    for name in ("micropysensorbase.main", "main"):
         mod = sys.modules.get(name)
         if mod is not None:
             wdt = getattr(mod, "WATCHDOG", None)
@@ -266,22 +270,37 @@ def _rearm_wdt_feeder() -> None:
                 break
 
     if wdt is None:
-        # a flat install runs main.py as __main__, which need not be registered
-        # in sys.modules at all - fall back to scanning what is there.
         for mod in sys.modules.values():
             wdt = getattr(mod, "WATCHDOG", None)
             if wdt is not None:
                 break
 
-    if wdt is None:
-        print("  no WATCHDOG found - assuming none is active")
-        return
-
+    # Arm the timer before laying hands on a WDT: if init() fails, we must not be
+    # the ones who leave a watchdog behind that nobody feeds. The holder lets the
+    # callback exist before the object it feeds does.
+    holder: list = []
     try:
-        Timer(0).init(period=5_000, mode=Timer.PERIODIC, callback=lambda _: wdt.feed())
-        print("  re-armed Timer(0) as watchdog feeder")
+        Timer(0).init(
+            period=5_000, mode=Timer.PERIODIC, callback=lambda _: holder[0].feed() if holder else None
+        )
     except Exception as ex:
         print("  could not re-arm the watchdog feeder:", ex)
+        return
+
+    if wdt is None:
+        # A flat install keeps WATCHDOG in the repl globals - main.py runs as
+        # __main__, which micropython does not register in sys.modules (verified
+        # on device) - so an imported module cannot reach it. There is only one
+        # hardware wdt though, and a fresh handle feeds that very same one.
+        try:
+            wdt = WDT(timeout=30_000)
+            print("  no WATCHDOG in sys.modules - took a fresh WDT handle")
+        except Exception as ex:
+            print("  could not obtain a WDT handle:", ex)
+            return
+
+    holder.append(wdt)
+    print("  Timer(0) feeds the watchdog for the rest of the migration")
 
 
 def quiesce_old_install() -> None:
