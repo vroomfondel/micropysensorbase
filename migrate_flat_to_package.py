@@ -235,6 +235,11 @@ def stop_timers() -> None:
             pass
 
 
+# never purged: when the migration is driven over WebREPL, dropping these
+# would pull the rug out from under the very connection issuing the commands
+KEEP_MODULES: tuple = ("webrepl", "_webrepl", "webrepl_cfg", "websocket_helper")
+
+
 def purge_modules() -> None:
     """Drop the flat modules from sys.modules.
 
@@ -242,6 +247,8 @@ def purge_modules() -> None:
     /time.py instead of the built-in module.
     """
     for name in list(sys.modules.keys()):
+        if name in KEEP_MODULES:
+            continue
         mod = sys.modules[name]
         src = getattr(mod, "__file__", "")
         if src and not src.startswith("/lib/") and not src.startswith("."):
