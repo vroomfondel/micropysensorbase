@@ -177,18 +177,23 @@ def setup_pins() -> None:
                 ina_address = config.get_config_data_int(ina226c, "address")
 
             from . ina226_raspi import INA226
-            ina = INA226(
+            # INA226.__init__ only computes, it never touches the bus - the first real
+            # i2c-write happens in configure(). Assigning to the module-global only after
+            # that succeeded, so a missing/dead chip does not leave a usable-looking
+            # object behind that would let main.setup() start the measure-timer.
+            _ina = INA226(
                 address=ina_address,
                 smbus=smbus,
                 max_expected_amps=config.get_config_data_float(ina226c, "max_expected_amps"),
                 log_level=logging.INFO,
                 shunt_ohms=config.get_config_data_float(ina226c, "shunt_ohms")
             )
-            ina.configure(
-                avg_mode=ina.AVG_4BIT,
-                bus_ct=ina.VCT_204us_BIT,
-                shunt_ct=ina.VCT_8244us_BIT
+            _ina.configure(
+                avg_mode=_ina.AVG_4BIT,
+                bus_ct=_ina.VCT_204us_BIT,
+                shunt_ct=_ina.VCT_8244us_BIT
             )  # make avg-mode configurable ?!
+            ina = _ina
 
             # ina.configure(avg_mode=ina.AVG_1024BIT, bus_ct=ina.VCT_204us_BIT, shunt_ct=ina.VCT_8244us_BIT)  # make avg-mode configurable ?!
 

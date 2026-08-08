@@ -217,7 +217,30 @@ def setup() -> None:
     import micropython
 
     micropython.mem_info()
-    measurements.setup_pins()
+    # A failing sensor-setup must not pass for a healthy device: msgtimer and mqtt are
+    # already running at this point, so an uncaught exception here leaves the node
+    # reporting ONLINE with a growing runtime while it silently never measures anything.
+    # Swallow it, but make the failure loud on the logging-feed.
+    try:
+        measurements.setup_pins()
+    except Exception as ex:
+        _out = io.StringIO()
+        sys.print_exception(ex)
+        sys.print_exception(ex, _out)
+
+        logger.error(_out.getvalue())
+
+        if not DISABLE_INET:
+            try:
+                mqttwrap.publish_one(
+                    topic=mqttwrap.get_feed("loggingfeed"),
+                    msg=f"SETUP_PINS FAILED at {time.getisotimenow()}: {ex}",
+                    retain=True,
+                    qos=1,
+                    reset_if_mqtt_fails=False,
+                )
+            except Exception as pex:
+                logger.error(f"could not publish setup_pins-failure: {pex}")
     micropython.mem_info()
 
 
