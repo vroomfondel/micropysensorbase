@@ -160,10 +160,14 @@ def check_msgs_callback(_: object=None) -> None:
     # logger.debug(f"{type(trigger)=} {trigger=}")
     # DEBUG:__main__:type(trigger)=<class 'Timer'> trigger=Timer(0, mode=PERIODIC, period=3000)
 
-    micropython.schedule(check_msgs, None)
-
+    # feed BEFORE scheduling, like measure_callback does: once the main thread
+    # blocks (e.g. a umqtt read without timeout), the schedule-queue fills up and
+    # micropython.schedule() raises in here. A feed placed after it would never
+    # run again, so the wdt panics 30s later instead of surviving the stall.
     if WATCHDOG:
         WATCHDOG.feed()
+
+    micropython.schedule(check_msgs, None)
 
 ############################# end of boilerplate #############################
 
