@@ -10,7 +10,19 @@ deploy (device in the field, over WebREPL):
     python webrepl_cli.py -p <pw> migrate_flat_to_package.py <ip>:/migrate_flat_to_package.py
 
 run it on the device:
+    from machine import Timer; [Timer(i).deinit() for i in range(4)]   # FIRST, see below
     import migrate_flat_to_package
+
+On a device that is still running the old install, kill the timers by hand before
+importing. Two reasons, and neither can be solved from inside this script:
+  - the measure-callback fires every 10s, logs into the very session you are
+    typing into, and corrupts the pasted line ("SyntaxError: invalid syntax for
+    integer with base 10")
+  - that same callback goes measure -> publish -> ensure_wifi_catch_reset(), which
+    resets the device 60s later, right in the middle of the migration
+Over serial the raw REPL avoids the corruption, so this works too and is safer:
+    mpremote connect /dev/ttyUSB0 exec "from machine import Timer
+    [Timer(i).deinit() for i in range(4)]"
 
 The script is idempotent enough to be restarted after an abort: as long as the
 rescue boot.py is in place, the device comes back up with wifi and WebREPL.
@@ -232,12 +244,13 @@ def cleanup_root(keep: set) -> list:
     return removed
 
 
-def stop_timers() -> None:
-    """Silence the periodic callbacks of the old flat install.
+def quiesce_old_install() -> None:
+    """Silence the running old install. Must be the very first thing we do.
 
-    On a running device msgtimer/measuretimer keep firing and would reach into
-    already deleted modules during the cleanup. The esp32 has four hardware
-    timers; which of them are in use depends on the old revision.
+    On a running device measuretimer/msgtimer keep firing while this script is
+    still reading the config, and such a callback goes measure -> publish ->
+    ensure_wifi_catch_reset(), which resets the device mid-migration. The esp32
+    has four hardware timers; which of them are in use depends on the revision.
     """
     from machine import Timer
 
@@ -246,6 +259,19 @@ def stop_timers() -> None:
             Timer(i).deinit()
         except Exception:
             pass
+
+    # A callback handed to micropython.schedule() before the deinit can still
+    # fire afterwards. Make its network path a no-op so it cannot reach
+    # ensure_wifi()/mqtt: send_data_to_mosquitto() returns immediately on this.
+    for name in ("micropysensorbase.measurements", "measurements"):
+        mod = sys.modules.get(name)
+        if mod is None:
+            continue
+        try:
+            mod.DISABLE_INET = True  # type: ignore[attr-defined]
+            print("  neutralised network path of", name)
+        except Exception as ex:
+            print("  could not neutralise", name, ex)
 
 
 # never purged: when the migration is driven over WebREPL, dropping these
@@ -372,7 +398,12 @@ def migrate() -> None:
     print("migration flat -> package")
     print("=" * 62)
 
-    print("\n[1/10] reading config (before the cleanup!)")
+    # first thing, before anything slow: a firing measure-callback would go
+    # measure -> publish -> ensure_wifi_catch_reset() and reset us mid-migration
+    print("\n[1/10] quiescing the running old install")
+    quiesce_old_install()
+
+    print("\n[2/10] reading config (before the cleanup!)")
     cfg: dict = load_config()
 
     if not _exists("/esp32config.local.json"):
@@ -396,9 +427,6 @@ def migrate() -> None:
         print("       or set MIP_INDEX at the top of this script.")
         return
     print("  mip index:", index)
-
-    print("\n[2/10] stopping timers of the old install")
-    stop_timers()
 
     print("\n[3/10] writing rescue boot.py")
     print("  ", write_file("/boot.py", RESCUE_BOOT), "bytes")
